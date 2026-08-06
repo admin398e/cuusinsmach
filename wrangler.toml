@@ -1,0 +1,45 @@
+# Cousins Mechanical — Cloudflare Worker config
+# Fill in the KV id from:  wrangler kv namespace create CMS_KV
+name = "cousins-mechanical"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Serve the website from ./public (exported .dc.html, images/, support.js, _ds/)
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Custom domain — the worker serves the site + API on your real domain.
+# The zone must already be on Cloudflare (you've set the routing up).
+[[routes]]
+pattern = "cousinsmechanicalservices.co.uk"
+custom_domain = true
+
+[[routes]]
+pattern = "www.cousinsmechanicalservices.co.uk"
+custom_domain = true
+
+# Accounts, sessions, bookings, audit log, retention
+[[kv_namespaces]]
+binding = "CMS_KV"
+id = "cdd61c6aa2564cfea5af8afc48f7e947"
+
+# GDPR retention sweep — runs daily at 03:00 UTC
+[triggers]
+crons = ["0 3 * * *"]
+
+# Secrets (set with `wrangler secret put NAME`, never commit):
+#   SESSION_PEPPER   password-hash pepper (openssl rand -hex 32)
+#   UKVD_API_KEY     UK Vehicle Data Ltd key (plate lookup)
+#   TIRE_API_KEY     tire.vdim.app key
+#   TWILIO_SID / TWILIO_TOKEN / TWILIO_FROM   (optional — only if NOT using WhatsApp)
+#   WHATSAPP_TOKEN     Meta WhatsApp Cloud API token (cheaper than SMS)
+#   WHATSAPP_PHONE_ID  WhatsApp Business phone number ID
+#   UKVD_BASE          (optional) UK Vehicle Data base URL — set for sandbox key
+#   GCAL_CLIENT_EMAIL  Google service-account email
+#   GCAL_PRIVATE_KEY   service-account private key (PEM)
+#   GCAL_CALENDAR_ID   calendar id shared with the service account
+#   RESEND_API_KEY   Resend API key (resend.com — free 3,000/mo)
+#   MAIL_FROM        from-address on a domain verified in Resend
+#   SITE_URL         your live site URL (used in password-reset links)
+#   ADMIN_TOKEN      bearer token to authorise driver/admin status texts (/api/notify) + the admin dashboard

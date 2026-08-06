@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#14100e;font-family:'Barlow',system-ui,sans-serif;color:#e9e4df}
+  ::selection{background:#e8791a;color:#14100e}
+  input,select,textarea,button{font-family:inherit}
+  input:focus,select:focus{outline:none;border-color:#e8791a!important}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @media(max-width:760px){.adm-kpi{grid-template-columns:1fr 1fr!important}.adm-stockform{grid-template-columns:1fr 1fr!important}}
+  .adm-th{text-align:left;font-family:'Barlow Condensed';font-weight:700;letter-spacing:.06em;color:#9a918a;font-size:12.5px;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #2a2320}
+  .adm-td{padding:12px 14px;border-bottom:1px solid #201b18;font-size:14px;color:#d9d2cc;vertical-align:middle}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+
+<!-- LOGIN GATE -->
+<sc-if value="{{ needsLogin }}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div style="width:100%;max-width:400px;background:#1c1714;border:1px solid #2a2320;border-radius:18px;padding:30px;animation:fadeIn .3s ease">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+        <span style="display:inline-flex;background:#fff;border-radius:10px;padding:6px 10px"><img src="images/logo.png" alt="Cousins" style="height:38px;width:auto;display:block"/></span>
+      </div>
+      <div style="font-family:'Barlow Condensed';font-weight:800;font-size:26px;color:#fff;margin:14px 0 4px">ADMIN DASHBOARD</div>
+      <div style="color:#9a918a;font-size:13.5px;margin-bottom:20px">Staff only. Enter your admin access token.</div>
+      <input value="{{ tokenInput }}" onInput="{{ setToken }}" onKeyDown="{{ onKey }}" type="password" placeholder="Admin token" style="width:100%;border:1.5px solid #3a322d;background:#14100e;color:#fff;border-radius:10px;padding:13px 14px;font-size:16px;margin-bottom:10px"/>
+      <input value="{{ apiInput }}" onInput="{{ setApi }}" placeholder="Worker URL (blank = same site)" style="width:100%;border:1.5px solid #3a322d;background:#14100e;color:#fff;border-radius:10px;padding:12px 14px;font-size:14px;margin-bottom:14px"/>
+      <sc-if value="{{ loginErr }}" hint-placeholder-val="{{ false }}"><div style="background:rgba(165,64,26,.2);border:1px solid #6b3520;color:#f0a884;border-radius:9px;padding:10px 13px;font-size:13.5px;margin-bottom:12px">{{ loginErr }}</div></sc-if>
+      <button onClick="{{ login }}" style="width:100%;background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:10px;padding:14px;cursor:pointer;font-size:15.5px">{{ loginLabel }}</button>
+      <div style="color:#6f6862;font-size:12px;margin-top:14px;line-height:1.5">The token is your Worker's <strong>ADMIN_TOKEN</strong> secret. In demo mode (no Worker) any token opens sample data.</div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- DASHBOARD -->
+<sc-if value="{{ loggedIn }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column">
+    <!-- top bar -->
+    <header style="background:#0f0c0b;border-bottom:1px solid #2a2320;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:20">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="display:inline-flex;background:#fff;border-radius:9px;padding:5px 9px"><img src="images/logo.png" alt="Cousins" style="height:32px;width:auto;display:block"/></span>
+        <div style="font-family:'Barlow Condensed';font-weight:800;font-size:19px;color:#fff;letter-spacing:.02em">ADMIN</div>
+        <sc-if value="{{ demoMode }}" hint-placeholder-val="{{ true }}"><span style="background:rgba(232,121,26,.16);border:1px solid rgba(232,121,26,.45);color:#f4a04a;font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px">DEMO DATA</span></sc-if>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onClick="{{ refresh }}" style="background:#1c1714;border:1px solid #2a2320;color:#d9d2cc;font-weight:600;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13.5px">↻ Refresh</button>
+        <button onClick="{{ logout }}" style="background:#1c1714;border:1px solid #2a2320;color:#9a918a;font-weight:600;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13.5px">Log out</button>
+      </div>
+    </header>
+
+    <!-- tabs -->
+    <div style="background:#0f0c0b;border-bottom:1px solid #2a2320;padding:0 20px;display:flex;gap:4px;overflow-x:auto">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+        <button onClick="{{ t.go }}" style="{{ t.style }}">{{ t.label }} <span style="{{ t.pillStyle }}">{{ t.count }}</span></button>
+      </sc-for>
+    </div>
+
+    <div style="padding:22px 20px;max-width:1200px;width:100%;margin:0 auto">
+      <!-- KPI row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px" class="adm-kpi">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+          <div style="background:#1c1714;border:1px solid #2a2320;border-radius:14px;padding:16px 18px">
+            <div style="font-family:'Barlow Condensed';font-weight:800;font-size:32px;color:{{ k.color }};line-height:1">{{ k.value }}</div>
+            <div style="color:#9a918a;font-size:12.5px;font-weight:600;margin-top:4px">{{ k.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- JOBS -->
+      <sc-if value="{{ onJobs }}" hint-placeholder-val="{{ true }}">
+        <div style="background:#1c1714;border:1px solid #2a2320;border-radius:14px;overflow:hidden;animation:fadeIn .2s ease">
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;min-width:820px">
+              <thead><tr><th class="adm-th">Ref</th><th class="adm-th">Service</th><th class="adm-th">Vehicle</th><th class="adm-th">Customer</th><th class="adm-th">When</th><th class="adm-th">Status</th><th class="adm-th">Move to</th><th class="adm-th">Live GPS</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ jobRows }}" as="j" hint-placeholder-count="4">
+                  <tr>
+                    <td class="adm-td" style="font-weight:700;color:#f4a04a">{{ j.ref }}</td>
+                    <td class="adm-td">{{ j.svcLabel }}</td>
+                    <td class="adm-td" style="font-family:'Barlow Condensed';font-weight:700;letter-spacing:.04em">{{ j.reg }}</td>
+                    <td class="adm-td"><div style="font-weight:600;color:#fff">{{ j.name }}</div><div style="color:#8a817b;font-size:12px">{{ j.phone }}</div><div style="color:#6f6862;font-size:11px">{{ j.postcode }}</div></td>
+                    <td class="adm-td">{{ j.when }}</td>
+                    <td class="adm-td"><span style="{{ j.badgeStyle }}">{{ j.statusLabel }}</span></td>
+                    <td class="adm-td"><select value="{{ j.status }}" onChange="{{ j.onStatus }}" style="background:#14100e;border:1.5px solid #3a322d;color:#d9d2cc;border-radius:8px;padding:8px 10px;font-size:13px"><option value="confirmed">Confirmed</option><option value="enroute">On the way</option><option value="arrived">Arrived</option><option value="complete">Complete</option><option value="cancelled">Cancelled</option></select></td>
+                    <td class="adm-td"><button onClick="{{ j.toggleGps }}" style="{{ j.gpsStyle }}">{{ j.gpsLabel }}</button></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <sc-if value="{{ noJobs }}" hint-placeholder-val="{{ false }}"><div style="padding:34px;text-align:center;color:#8a817b">No jobs yet.</div></sc-if>
+        </div>
+      </sc-if>
+
+      <!-- CUSTOMERS -->
+      <sc-if value="{{ onCustomers }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#1c1714;border:1px solid #2a2320;border-radius:14px;overflow:hidden;animation:fadeIn .2s ease">
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;min-width:720px">
+              <thead><tr><th class="adm-th">Name</th><th class="adm-th">Email</th><th class="adm-th">Mobile</th><th class="adm-th">Jobs</th><th class="adm-th">SMS</th><th class="adm-th">Marketing</th><th class="adm-th">Joined</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ custRows }}" as="c" hint-placeholder-count="3">
+                  <tr>
+                    <td class="adm-td" style="font-weight:600;color:#fff">{{ c.name }}</td>
+                    <td class="adm-td">{{ c.email }}</td>
+                    <td class="adm-td">{{ c.phone }}</td>
+                    <td class="adm-td">{{ c.jobCount }}</td>
+                    <td class="adm-td">{{ c.sms }}</td>
+                    <td class="adm-td">{{ c.marketing }}</td>
+                    <td class="adm-td" style="color:#8a817b">{{ c.joined }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <sc-if value="{{ noCust }}" hint-placeholder-val="{{ false }}"><div style="padding:34px;text-align:center;color:#8a817b">No customers yet.</div></sc-if>
+        </div>
+      </sc-if>
+
+      <!-- PARTS & STOCK -->
+      <sc-if value="{{ onStock }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeIn .2s ease">
+          <div style="background:#1c1714;border:1px solid #2a2320;border-radius:14px;padding:18px;margin-bottom:16px">
+            <div style="font-family:'Barlow Condensed';font-weight:800;font-size:18px;color:#fff;margin-bottom:12px">ADD / UPDATE PART</div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:10px;align-items:end" class="adm-stockform">
+              <div><label style="font-size:12px;color:#9a918a;font-weight:600">Part / item</label><input value="{{ pName }}" onInput="{{ setPName }}" placeholder="e.g. 205/55 R16 tyre" style="width:100%;border:1.5px solid #3a322d;background:#14100e;color:#fff;border-radius:9px;padding:11px;font-size:14px"/></div>
+              <div><label style="font-size:12px;color:#9a918a;font-weight:600">SKU / size</label><input value="{{ pSku }}" onInput="{{ setPSku }}" placeholder="SKU" style="width:100%;border:1.5px solid #3a322d;background:#14100e;color:#fff;border-radius:9px;padding:11px;font-size:14px"/></div>
+              <div><label style="font-size:12px;color:#9a918a;font-weight:600">Qty in stock</label><input value="{{ pQty }}" onInput="{{ setPQty }}" type="number" placeholder="0" style="width:100%;border:1.5px solid #3a322d;background:#14100e;color:#fff;border-radius:9px;padding:11px;font-size:14px"/></div>
+              <div><label style="font-size:12px;color:#9a918a;font-weight:600">Price £</label><input value="{{ pPrice }}" onInput="{{ setPPrice }}" placeholder="0.00" style="width:100%;border:1.5px solid #3a322d;background:#14100e;color:#fff;border-radius:9px;padding:11px;font-size:14px"/></div>
+              <button onClick="{{ addStock }}" style="background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:9px;padding:12px 18px;cursor:pointer;font-size:14px;white-space:nowrap">Save</button>
+            </div>
+          </div>
+          <div style="background:#1c1714;border:1px solid #2a2320;border-radius:14px;overflow:hidden">
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;min-width:640px">
+                <thead><tr><th class="adm-th">Part / item</th><th class="adm-th">SKU</th><th class="adm-th">In stock</th><th class="adm-th">Price</th><th class="adm-th"></th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ stockRows }}" as="p" hint-placeholder-count="3">
+                    <tr>
+                      <td class="adm-td" style="font-weight:600;color:#fff">{{ p.name }}</td>
+                      <td class="adm-td">{{ p.sku }}</td>
+                      <td class="adm-td"><span style="{{ p.qtyStyle }}">{{ p.qty }}</span></td>
+                      <td class="adm-td">{{ p.priceLabel }}</td>
+                      <td class="adm-td" style="text-align:right"><button onClick="{{ p.del }}" style="background:rgba(165,64,26,.15);border:1px solid #6b3520;color:#f0a884;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12.5px;font-weight:600">Delete</button></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+            <sc-if value="{{ noStock }}" hint-placeholder-val="{{ true }}"><div style="padding:34px;text-align:center;color:#8a817b">No parts tracked yet — add your first above.</div></sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- CALENDAR -->
+      <sc-if value="{{ onCalendar }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeIn .2s ease">
+          <sc-if value="{{ hasCalendar }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#1c1714;border:1px solid #2a2320;border-radius:14px;overflow:hidden">
+              <iframe src="{{ calendarUrl }}" style="width:100%;height:620px;border:0;display:block;background:#fff"></iframe>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noCalendar }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#1c1714;border:1px solid #2a2320;border-radius:14px;padding:40px;text-align:center">
+              <div style="width:60px;height:60px;margin:0 auto 16px;border-radius:15px;background:rgba(232,121,26,.14);display:flex;align-items:center;justify-content:center"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f4a04a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+              <div style="font-family:'Barlow Condensed';font-weight:800;font-size:22px;color:#fff;margin-bottom:8px">CONNECT YOUR GOOGLE CALENDAR</div>
+              <p style="color:#9a918a;font-size:14.5px;line-height:1.6;max-width:460px;margin:0 auto">Set <strong>GCAL_CALENDAR_ID</strong> in your Worker and share the calendar with the service account. Every booking then lands here automatically, and the customer gets the invite.</p>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  state = {
+    token:'', apiBase:'', tokenInput:'', apiInput:'', loginErr:'', busy:false, loggedIn:false, demoMode:false,
+    tab:'jobs', jobs:[], customers:[], stock:[], calendarUrl:'', gpsRef:'',
+    pName:'', pSku:'', pQty:'', pPrice:''
+  };
+
+  componentDidMount(){
+    try{ const t=localStorage.getItem('cms_admin_token'); const a=localStorage.getItem('cms_admin_api')||''; if(t){ this.setState({token:t, apiBase:a, apiInput:a}, ()=>this.enter()); } }catch(e){}
+  }
+
+  setToken = e => this.setState({tokenInput:e.target.value});
+  setApi = e => this.setState({apiInput:e.target.value});
+  onKey = e => { if(e.key==='Enter') this.login(); };
+  login = () => {
+    const t=this.state.tokenInput.trim();
+    if(!t){ this.setState({loginErr:'Enter your admin token.'}); return; }
+    const a=this.state.apiInput.trim().replace(/\/+$/,'');
+    this.setState({token:t, apiBase:a, busy:true, loginErr:''});
+    try{ localStorage.setItem('cms_admin_token',t); localStorage.setItem('cms_admin_api',a); }catch(e){}
+    setTimeout(()=>this.enter(), 50);
+  };
+  logout = () => { try{ localStorage.removeItem('cms_admin_token'); }catch(e){} this.setState({loggedIn:false, token:'', tokenInput:''}); };
+
+  async af(path, opts){
+    opts=opts||{}; const h=Object.assign({}, opts.headers||{});
+    if(opts.body && !h['content-type']) h['content-type']='application/json';
+    h['authorization']='Bearer '+this.state.token;
+    return fetch(this.state.apiBase+'/api'+path, {...opts, headers:h});
+  }
+  hasServer(){ return !!this.state.apiBase || (typeof location!=='undefined' && /^https?:/.test(location.protocol) && location.hostname!=='localhost'); }
+
+  async enter(){
+    // Try the live worker; if unreachable/forbidden, fall back to demo data.
+    if(this.state.apiBase){
+      try{
+        const r=await this.af('/admin/jobs');
+        if(r.status===403){ this.setState({busy:false, loginErr:'Token rejected by the server.'}); return; }
+        if(r.ok){ this.setState({loggedIn:true, demoMode:false, busy:false}); this.loadAll(); return; }
+      }catch(e){}
+    }
+    // demo mode
+    this.setState({loggedIn:true, demoMode:true, busy:false, ...this.demoData()});
+  }
+  demoData(){
+    const now=Date.now();
+    return {
+      jobs:[
+        {ref:'CMS-8K2P1',svcLabel:'Mobile tyre fitting — mid (205/55 R16)',reg:'AB12 CDE',name:'John Smith',phone:'07900 111222',customerEmail:'john@example.com',date:'2026-08-07',time:'Morning (8–12)',postcode:'DT6 3QA',status:'enroute',createdAt:now-3600000},
+        {ref:'CMS-7H9X4',svcLabel:'Breakdown / recovery',reg:'LT19 KRM',name:'Sarah Adams',phone:'07123 445566',customerEmail:'sarah@example.com',date:'2026-08-07',time:'ASAP / Emergency',postcode:'DT6 4LK',status:'confirmed',createdAt:now-1800000},
+        {ref:'CMS-5R3M8',svcLabel:'Full service',reg:'WV68 PLT',name:'Dave Cooper',phone:'07777 889900',customerEmail:'dave@example.com',date:'2026-08-09',time:'Afternoon (12–5)',postcode:'DT6 5AB',status:'confirmed',createdAt:now-7200000},
+        {ref:'CMS-2N7B0',svcLabel:'Brake pads & discs',reg:'BD64 XYZ',name:'Emma Hill',phone:'07555 223344',customerEmail:'emma@example.com',date:'2026-08-05',time:'Morning (8–12)',postcode:'DT6 3PN',status:'complete',createdAt:now-90000000}
+      ],
+      customers:[
+        {name:'John Smith',email:'john@example.com',phone:'07900 111222',marketing:true,smsUpdates:true,createdAt:now-90000000,jobCount:3},
+        {name:'Sarah Adams',email:'sarah@example.com',phone:'07123 445566',marketing:false,smsUpdates:true,createdAt:now-40000000,jobCount:1},
+        {name:'Dave Cooper',email:'dave@example.com',phone:'07777 889900',marketing:true,smsUpdates:false,createdAt:now-8000000,jobCount:2},
+        {name:'Emma Hill',email:'emma@example.com',phone:'07555 223344',marketing:false,smsUpdates:true,createdAt:now-4000000,jobCount:1}
+      ],
+      stock:[
+        {id:'P1',name:'Budget tyre 205/55 R16',sku:'TY-20555-16-B',qty:8,price:46},
+        {id:'P2',name:'Michelin 225/45 R17',sku:'TY-22545-17-M',qty:3,price:118},
+        {id:'P3',name:'Front brake pads (common fit)',sku:'BR-PAD-F',qty:12,price:38},
+        {id:'P4',name:'12V battery 063',sku:'BAT-063',qty:5,price:74},
+        {id:'P5',name:'Oil filter (multi-fit)',sku:'OF-MULTI',qty:20,price:9}
+      ],
+      calendarUrl:''
+    };
+  }
+  async loadAll(){
+    if(this.state.demoMode) return;
+    try{ const [j,c,s,cal]=await Promise.all([this.af('/admin/jobs'),this.af('/admin/customers'),this.af('/admin/stock'),this.af('/admin/calendar')]);
+      const jd=await j.json().catch(()=>({})); const cd=await c.json().catch(()=>({})); const sd=await s.json().catch(()=>({})); const cald=await cal.json().catch(()=>({}));
+      this.setState({ jobs:jd.jobs||[], customers:cd.customers||[], stock:sd.stock||[], calendarUrl:(cald&&cald.embedUrl)||'' });
+    }catch(e){}
+  }
+  refresh = () => { if(this.state.demoMode){ this.setState(this.demoData()); } else this.loadAll(); };
+
+  go(tab){ this.setState({tab}); }
+
+  changeStatus(job, status){
+    const labels={confirmed:'Booking confirmed',enroute:'On the way',arrived:'Arrived',complete:'Job complete',cancelled:'Booking cancelled'};
+    const notes={
+      confirmed:'We have your job booked in.',
+      enroute:'Your mechanic is on the way — follow the van on the map.',
+      arrived:'Your mechanic has arrived and is with you.',
+      complete:'All done — thanks for choosing Cousins!',
+      cancelled:'This job has been cancelled.'
+    };
+    const sms='Cousins Mechanical: '+job.ref+' — '+labels[status]+'. '+notes[status];
+    this.setState(s=>({jobs:s.jobs.map(j=>j.ref===job.ref?{...j,status}:j)}));
+    if(!this.state.demoMode){ this.af('/admin/jobs/'+job.ref,{method:'PATCH',body:JSON.stringify({customerEmail:job.customerEmail,status,label:labels[status],note:notes[status],sms})}).catch(()=>{}); }
+  }
+
+  toggleGps(job){
+    if(this.state.gpsRef===job.ref){ // stop
+      if(this._watch!=null && navigator.geolocation) navigator.geolocation.clearWatch(this._watch);
+      this._watch=null; this.setState({gpsRef:''}); return;
+    }
+    if(!navigator.geolocation){ alert('This device has no GPS.'); return; }
+    if(this._watch!=null) navigator.geolocation.clearWatch(this._watch);
+    this.setState({gpsRef:job.ref});
+    this._watch = navigator.geolocation.watchPosition(pos=>{
+      const body={ ref:job.ref, lat:pos.coords.latitude, lng:pos.coords.longitude };
+      if(!this.state.demoMode) this.af('/driver/location',{method:'POST',body:JSON.stringify(body)}).catch(()=>{});
+    }, ()=>{}, { enableHighAccuracy:true, maximumAge:5000, timeout:15000 });
+  }
+
+  setPName=e=>this.setState({pName:e.target.value});
+  setPSku=e=>this.setState({pSku:e.target.value});
+  setPQty=e=>this.setState({pQty:e.target.value});
+  setPPrice=e=>this.setState({pPrice:e.target.value});
+  addStock = () => {
+    const {pName,pSku,pQty,pPrice}=this.state;
+    if(!pName.trim()) return;
+    const item={ name:pName.trim(), sku:pSku.trim(), qty:parseInt(pQty||'0',10)||0, price:parseFloat(pPrice||'0')||0 };
+    if(!this.state.demoMode){ this.af('/admin/stock',{method:'POST',body:JSON.stringify(item)}).then(r=>r.json()).then(d=>{ if(d.stock) this.setState({stock:d.stock}); }).catch(()=>{}); }
+    else { this.setState(s=>({stock:[...s.stock,{...item,id:'P'+Date.now().toString(36).slice(-4)}]})); }
+    this.setState({pName:'',pSku:'',pQty:'',pPrice:''});
+  };
+  delStock(id){
+    if(!this.state.demoMode){ this.af('/admin/stock/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{ if(d.stock) this.setState({stock:d.stock}); }).catch(()=>{}); }
+    else { this.setState(s=>({stock:s.stock.filter(x=>x.id!==id)})); }
+  }
+
+  fmtWhen(o){ if(!o.date) return 'TBC'; try{ return new Date(o.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' · '+(o.time||''); }catch(e){ return o.date; } }
+  fmtDate(t){ try{ return new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return ''; } }
+
+  renderVals(){
+    const s=this.state;
+    const statusMap={confirmed:['CONFIRMED','#e8791a'],enroute:['ON THE WAY','#0d5bd4'],arrived:['ARRIVED','#39a854'],complete:['COMPLETE','#6f6862'],cancelled:['CANCELLED','#a5401a']};
+    const badge=(st)=>{ const m=statusMap[st]||['—','#6f6862']; return 'font-family:\'Barlow Condensed\';font-weight:800;font-size:11.5px;letter-spacing:.05em;color:#fff;background:'+m[1]+';border-radius:6px;padding:4px 9px'; };
+
+    const activeJobs=s.jobs.filter(j=>j.status!=='cancelled'&&j.status!=='complete');
+    const jobRows=s.jobs.map(j=>({ ...j, when:this.fmtWhen(j), statusLabel:(statusMap[j.status]||['—'])[0], badgeStyle:badge(j.status),
+      onStatus:(e)=>this.changeStatus(j, e.target.value),
+      toggleGps:()=>this.toggleGps(j),
+      gpsLabel: s.gpsRef===j.ref?'● Sharing':'Share',
+      gpsStyle: 'border:1px solid '+(s.gpsRef===j.ref?'#39a854':'#3a322d')+';background:'+(s.gpsRef===j.ref?'rgba(57,168,84,.16)':'#14100e')+';color:'+(s.gpsRef===j.ref?'#4fe06a':'#9a918a')+';font-weight:700;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12.5px;white-space:nowrap' }));
+    const custRows=s.customers.map(c=>({ ...c, sms:c.smsUpdates?'On':'Off', marketing:c.marketing?'Yes':'No', joined:this.fmtDate(c.createdAt) }));
+    const stockRows=s.stock.map(p=>({ ...p, priceLabel:'£'+(p.price||0),
+      qtyStyle:'font-weight:700;color:'+(p.qty<=2?'#f0a884':(p.qty<=5?'#f4a04a':'#4fe06a')),
+      del:()=>this.delStock(p.id) }));
+
+    const tabDef=[['jobs','Jobs',activeJobs.length],['customers','Customers',s.customers.length],['stock','Parts & Stock',s.stock.length],['calendar','Calendar','']];
+    const tabs=tabDef.map(t=>({ label:t[1], count:t[2], go:()=>this.go(t[0]),
+      style:'display:flex;align-items:center;gap:7px;border:0;cursor:pointer;background:transparent;color:'+(s.tab===t[0]?'#fff':'#8a817b')+';font-family:\'Barlow Condensed\';font-weight:700;font-size:16px;letter-spacing:.03em;padding:14px 16px;border-bottom:2px solid '+(s.tab===t[0]?'#e8791a':'transparent'),
+      pillStyle: t[2]===''?'display:none':'display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 6px;border-radius:9px;font-size:11px;font-weight:800;background:'+(s.tab===t[0]?'#e8791a':'#2a2320')+';color:'+(s.tab===t[0]?'#14100e':'#9a918a') }));
+
+    const lowStock=s.stock.filter(p=>p.qty<=2).length;
+    const kpis=[
+      {value:activeJobs.length,label:'Active jobs',color:'#e8791a'},
+      {value:s.jobs.filter(j=>j.status==='enroute').length,label:'Vans on the road',color:'#0d5bd4'},
+      {value:s.customers.length,label:'Customers',color:'#4fe06a'},
+      {value:lowStock,label:'Low-stock parts',color:lowStock?'#f0a884':'#6f6862'}
+    ];
+
+    return {
+      needsLogin:!s.loggedIn, loggedIn:s.loggedIn, demoMode:s.demoMode,
+      tokenInput:s.tokenInput, apiInput:s.apiInput, setToken:this.setToken, setApi:this.setApi, onKey:this.onKey,
+      login:this.login, logout:this.logout, refresh:this.refresh, loginErr:s.loginErr, loginLabel:s.busy?'Signing in…':'Enter dashboard',
+      tabs, kpis,
+      onJobs:s.tab==='jobs', onCustomers:s.tab==='customers', onStock:s.tab==='stock', onCalendar:s.tab==='calendar',
+      jobRows, noJobs:s.jobs.length===0,
+      custRows, noCust:s.customers.length===0,
+      stockRows, noStock:s.stock.length===0,
+      pName:s.pName, pSku:s.pSku, pQty:s.pQty, pPrice:s.pPrice,
+      setPName:this.setPName, setPSku:this.setPSku, setPQty:this.setPQty, setPPrice:this.setPPrice, addStock:this.addStock,
+      hasCalendar:!!s.calendarUrl, noCalendar:!s.calendarUrl, calendarUrl:s.calendarUrl
+    };
+  }
+}
+</script>
+</body>
+</html>
