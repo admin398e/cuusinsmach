@@ -9,6 +9,26 @@
 <x-dc>
 <helmet>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cousins Mechanical Services | Mobile Mechanic &amp; Tyre Fitting, Bridport &amp; West Dorset</title>
+<meta name="description" content="Cousins Mechanical Services — mobile mechanic, mobile tyre fitting and 24hr breakdown &amp; recovery in Bridport, Dorchester and across West Dorset. We come to your home, work or roadside. Book online or call 07925 340977.">
+<meta name="keywords" content="mobile mechanic Bridport, mobile tyre fitting Dorset, mobile tyre fitter West Dorset, car breakdown recovery Bridport, mobile car servicing Dorchester, tyre replacement at home, roadside tyre repair, mobile brake repair, mobile diagnostics Dorset, emergency mechanic Bridport">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="author" content="Cousins Mechanical Services Ltd">
+<meta name="theme-color" content="#14100e">
+<link rel="canonical" href="https://cousinsmechanicalservices.co.uk/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Cousins Mechanical Services">
+<meta property="og:title" content="Mobile Mechanic &amp; Tyre Fitting — Bridport &amp; West Dorset | Cousins Mechanical Services">
+<meta property="og:description" content="Flat tyre, breakdown or a service due? We come to you — home, work or roadside — across Bridport &amp; West Dorset, 24 hours a day.">
+<meta property="og:url" content="https://cousinsmechanicalservices.co.uk/">
+<meta property="og:image" content="https://cousinsmechanicalservices.co.uk/images/tyre-van.jpg">
+<meta property="og:locale" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mobile Mechanic &amp; Tyre Fitting — Bridport &amp; West Dorset">
+<meta name="twitter:description" content="We come to you — home, work or roadside — across Bridport &amp; West Dorset, 24 hours a day. Book online or call 07925 340977.">
+<meta name="twitter:image" content="https://cousinsmechanicalservices.co.uk/images/tyre-van.jpg">
+<link rel="icon" type="image/png" href="images/logo.png">
+<link rel="apple-touch-icon" href="images/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
@@ -42,6 +62,30 @@
   @media(max-width:560px){.cms-quick{grid-template-columns:1fr!important}.cms-grid2{grid-template-columns:1fr!important}.cms-grid3{grid-template-columns:1fr!important}}
   input:focus,select:focus,textarea:focus{outline:none;border-color:#e8791a!important;box-shadow:0 0 0 3px rgba(232,121,26,.18)}
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "AutoRepair",
+  "name": "Cousins Mechanical Services Ltd",
+  "image": "https://cousinsmechanicalservices.co.uk/images/tyre-van.jpg",
+  "url": "https://cousinsmechanicalservices.co.uk/",
+  "telephone": "+447925340977",
+  "priceRange": "££",
+  "description": "Mobile mechanic, mobile tyre fitting and 24hr breakdown & recovery covering Bridport, Dorchester and West Dorset. We come to your home, work or the roadside.",
+  "areaServed": ["Bridport", "Dorchester", "West Dorset", "Dorset"],
+  "address": { "@type": "PostalAddress", "addressLocality": "Bridport", "addressRegion": "Dorset", "addressCountry": "GB" },
+  "openingHoursSpecification": [
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], "opens": "07:00", "closes": "19:00" }
+  ],
+  "makesOffer": [
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Mobile tyre fitting" } },
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Breakdown & recovery" } },
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Car servicing" } },
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Brakes, clutches & diagnostics" } }
+  ],
+  "sameAs": []
+}
+</script>
 </helmet>
 <div style="background:#f4f2ef;overflow-x:hidden">
 
@@ -153,17 +197,14 @@
         </div>
         <button onClick="{{ lookupReg }}" style="background:#e8791a;color:#14100e;font-weight:700;font-size:17px;border:0;border-radius:11px;padding:0 26px;cursor:pointer;white-space:nowrap" style-hover="background:#f78c30">Find →</button>
       </div>
-      <div style="text-align:center;color:#8a817b;font-size:13px;margin-top:12px">UK Vehicle Data plate lookup. Try <button onClick="{{ tryDemo }}" style="background:none;border:0;color:#c25e0c;font-weight:700;cursor:pointer;text-decoration:underline;font-size:13px">AB12CDE</button> · <button onClick="{{ openCfg }}" style="background:none;border:0;color:#c25e0c;font-weight:700;cursor:pointer;text-decoration:underline;font-size:13px">Connect live data</button></div>
-      <sc-if value="{{ sampleNote }}" hint-placeholder-val="{{ true }}">
-        <div style="max-width:520px;margin:10px auto 0;background:#fff6ec;border:1px solid #f2d9bd;border-radius:10px;padding:9px 13px;text-align:center;color:#9a6a2c;font-size:12.5px;line-height:1.4">Showing <strong>sample vehicle data</strong>. Connect your UK Vehicle Data proxy via <button onClick="{{ openCfg }}" style="background:none;border:0;color:#c25e0c;font-weight:700;cursor:pointer;text-decoration:underline;font-size:12.5px">Connect live data</button> to make the plate lookup live.</div>
-      </sc-if>
+      <div style="text-align:center;color:#8a817b;font-size:13px;margin-top:12px">Enter your registration to find the exact tyres for your vehicle.</div>
 
       <!-- live vehicle picker -->
       <sc-if value="{{ showPicker }}" hint-placeholder-val="{{ true }}">
         <div style="max-width:560px;margin:22px auto 0;border-top:1px dashed #e2dbd3;padding-top:20px">
           <div style="text-align:center;font-weight:700;color:#1c1817;font-size:15px;margin-bottom:3px">Find your exact tyres by vehicle <span style="display:inline-block;background:#39a854;color:#fff;font-family:'Barlow Condensed';font-weight:800;font-size:11px;letter-spacing:.08em;border-radius:5px;padding:2px 7px;vertical-align:middle">LIVE</span></div>
           <div style="text-align:center;color:#8a817b;font-size:12.5px;margin-bottom:14px">Real tyre sizes from the fitment database — year, make, model &amp; trim.</div>
-          <sc-if value="{{ hasProxy }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ hasProxy }}" hint-placeholder-val="{{ true }}">
             <div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                 <select value="{{ pk.year }}" onChange="{{ pickYear }}" style="border:1.5px solid #ddd4cb;border-radius:10px;padding:12px 12px;font-size:15px;background:#fff;color:#1c1817">
@@ -186,12 +227,6 @@
               <sc-if value="{{ pkErr }}" hint-placeholder-val="{{ false }}">
                 <div style="margin-top:10px;text-align:center;color:#a5401a;font-size:12.5px;font-weight:600">{{ pkErr }}</div>
               </sc-if>
-            </div>
-          </sc-if>
-          <sc-if value="{{ noProxy }}" hint-placeholder-val="{{ true }}">
-            <div style="text-align:center;background:#faf7f3;border:1px solid #eee3d8;border-radius:11px;padding:16px">
-              <div style="color:#5c534d;font-size:13.5px;line-height:1.5;margin-bottom:12px">Connect your tyre-data proxy once to switch this on — then every lookup returns real, exact tyre sizes.</div>
-              <button onClick="{{ openCfg }}" style="background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:9px;padding:11px 20px;cursor:pointer">Connect live data</button>
             </div>
           </sc-if>
         </div>
@@ -800,32 +835,6 @@
   </div>
 </sc-if>
 
-<!-- ===== LIVE DATA CONFIG MODAL ===== -->
-<sc-if value="{{ cfgOpen }}" hint-placeholder-val="{{ false }}">
-  <div class="cms-ov" onClick="{{ closeCfg }}">
-    <div class="cms-sheet" onClick="{{ stop }}">
-      <div style="position:sticky;top:0;background:#14100e;color:#fff;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;z-index:2">
-        <div style="font-family:'Barlow Condensed';font-weight:800;font-size:22px">CONNECT LIVE VEHICLE DATA</div>
-        <button onClick="{{ closeCfg }}" style="background:rgba(255,255,255,.1);border:0;color:#fff;width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:20px;line-height:1">✕</button>
-      </div>
-      <div style="padding:22px;display:flex;flex-direction:column;gap:15px">
-        <div style="background:#faf7f3;border:1px solid #eee3d8;border-radius:11px;padding:13px 15px;font-size:13.5px;color:#5c534d;line-height:1.55">
-          For security, vehicle &amp; tyre APIs can't be called straight from a browser — your keys sit in a tiny free proxy (a Cloudflare Worker; the <strong>tire-proxy-worker.js</strong> file in this project has 2-minute setup steps). Paste your deployed worker URL below and the plate box goes live via UK Vehicle Data, with the vehicle picker via the fitment API. Stored only on this device.
-        </div>
-        <div>
-          <label style="display:block;font-weight:700;color:#1c1817;font-size:13.5px;margin-bottom:6px">Your proxy URL</label>
-          <input value="{{ cfgEndpoint }}" onInput="{{ setCfgEndpoint }}" placeholder="https://cousins-tyre.yourname.workers.dev" style="width:100%;border:1.5px solid #ddd4cb;border-radius:10px;padding:12px 14px;font-size:15px"/>
-          <div style="color:#8a817b;font-size:12px;margin-top:5px">Your API keys live inside the worker, never in this website.</div>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:4px">
-          <button onClick="{{ saveConfig }}" style="flex:1;background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:10px;padding:13px;cursor:pointer;font-size:15px">Save &amp; go live</button>
-          <button onClick="{{ clearConfig }}" style="background:#f0ebe5;color:#1c1817;font-weight:700;border:0;border-radius:10px;padding:13px 18px;cursor:pointer">Use sample</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</sc-if>
-
 <!-- ===== LIGHTBOX ===== -->
 <sc-if value="{{ lightbox }}" hint-placeholder-val="{{ false }}">
   <div class="cms-ov" style="align-items:center;background:rgba(8,6,5,.92)" onClick="{{ closeLightbox }}">
@@ -999,10 +1008,10 @@ class Component extends DCLogic {
     this.setState({regStatus:'loading', regError:''});
     try {
       const v = await this.fetchVehicle(reg);
-      this.setState({regStatus:'result', vehicle:v, isSample: !this._live});
+      this.setState({regStatus:'result', vehicle:v});
       this.buildOptions(v, this.state.regTab);
     } catch(err){
-      this.setState({regStatus:'error', regError:'We could not find that vehicle. Check the reg, or call us on 07925 340977.'});
+      this.setState({regStatus:'error', regError:'We couldn\u2019t find that registration. Please double-check it, or call us on 07925 340977 and we\u2019ll sort it.'});
     }
   };
 
@@ -1021,12 +1030,11 @@ class Component extends DCLogic {
           const v = this.normalise(reg, d, 'ukvd');
           if(v.tyre){ this._live = true; return v; }
         }
-      }catch(e){ /* fall through to sample */ }
+      }catch(e){}
     }
-    // 2) Fallback: sample data so the page always demos
+    // No live match — surface an error rather than any placeholder data
     this._live = false;
-    await this.delay(1600);
-    return this.demoVehicle(reg);
+    throw new Error('nolookup');
   }
   normalise(reg, d, provider){
     if(provider==='ukvd'){
@@ -1525,7 +1533,7 @@ class Component extends DCLogic {
 
     const galImgs = ['job-01','job-02','job-03','job-05','job-06','job-08','job-10','job-12','job-14','job-16','job-18','job-19'];
     const gallery = galImgs.map((g,i)=>({ img:'images/'+g+'.jpg',
-      imgEl: R('img',{src:'images/'+g+'.jpg',alt:'Recent job',style:{width:'100%',height:'100%',objectFit:'cover',display:'block'}}),
+      imgEl: R('img',{src:'images/'+g+'.jpg',alt:'Mobile mechanic and tyre fitting job by Cousins Mechanical Services in West Dorset',loading:'lazy',style:{width:'100%',height:'100%',objectFit:'cover',display:'block'}}),
       cellStyle:'border:0;padding:0;cursor:pointer;border-radius:12px;overflow:hidden;aspect-ratio:1;background:#ddd;display:block',
       open:()=>this.setState({lightbox:'images/'+g+'.jpg'}) }));
 
@@ -1624,18 +1632,11 @@ class Component extends DCLogic {
       trackRefLabel: hasTrack ? ('Reference '+active_order.ref+' · '+(active_order.svcLabel||'Mobile job')) : 'Live map, ETA and SMS-style updates',
       // lightbox
       lightbox:s.lightbox, closeLightbox:()=>this.setState({lightbox:''}),
-      // live-data config
-      isSample: s.isSample,
-      verifyLabel: s.isSample ? 'Sample data' : 'Verified · live',
-      verifyStyle: 'display:flex;align-items:center;gap:7px;border-radius:100px;padding:6px 12px;font-size:12.5px;font-weight:700;'+(s.isSample
-        ? 'background:rgba(232,121,26,.14);border:1px solid rgba(232,121,26,.45);color:#f4a04a'
-        : 'background:rgba(57,211,83,.14);border:1px solid rgba(57,211,83,.4);color:#4fe06a'),
-      sampleNote: s.isSample,
-      cfgOpen:s.cfgOpen, openCfg:this.openCfg, closeCfg:this.closeCfg, saveConfig:this.saveConfig, clearConfig:this.clearConfig,
-      cfgEndpoint:s.cfgEndpoint, cfgKey:s.cfgKey, cfgProvider:s.cfgProvider,
-      setCfgEndpoint:this.setCfgEndpoint, setCfgKey:this.setCfgKey, setCfgProvider:this.setCfgProvider,
+      // verified badge (always live)
+      verifyLabel: 'DVLA verified',
+      verifyStyle: 'display:flex;align-items:center;gap:7px;border-radius:100px;padding:6px 12px;font-size:12.5px;font-weight:700;background:rgba(57,211,83,.14);border:1px solid rgba(57,211,83,.4);color:#4fe06a',
       // live vehicle picker
-      showPicker: s.regTab==='tyres', hasProxy: this.hasProxy(), noProxy: !this.hasProxy(),
+      showPicker: s.regTab==='tyres', hasProxy: true,
       opt: s.opt, pk: s.pk, pkErr: s.pkErr,
       pickYear:this.pickYear, pickMake:this.pickMake, pickModel:this.pickModel, pickTrim:this.pickTrim
     };

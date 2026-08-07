@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /driver.html
+
+Sitemap: https://cousinsmechanicalservices.co.uk/sitemap.xml

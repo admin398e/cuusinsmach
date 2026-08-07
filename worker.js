@@ -36,6 +36,7 @@
  *      OWNER_PHONE           the business owner's number (E.164, e.g. 447925340977) — gets WhatsApp/SMS on new customer messages
  *      SITE_URL              your live site URL, e.g. https://cousinsmechanical.co.uk (used in reset links)
  *      ADMIN_TOKEN           long random string — the admin dashboard password + status-text auth
+ *      OVERRIDE_TOKEN        owner master key — always logs in and can reset 2FA (never get locked out)
  *      (2FA: enrolled in-app; the TOTP secret is stored in KV as "admin_totp", not a Worker secret)
  *
  *    Any secret you leave unset simply disables that channel (the booking still succeeds).
@@ -517,6 +518,14 @@ async function api(request, env, url, ctx) {
   // Step 1: exchange admin token (+ TOTP code once enrolled) for a short-lived admin session.
   if (p === "/admin-login" && request.method === "POST") {
     const b = await request.json().catch(() => ({}));
+    // Master override: OVERRIDE_TOKEN always grants access and clears any stuck 2FA,
+    // so the site owner can never be locked out and can regain access for the client.
+    if (env.OVERRIDE_TOKEN && b.token === env.OVERRIDE_TOKEN) {
+      if (b.reset2fa) await env.CMS_KV.delete("admin_totp");
+      const t = token();
+      await env.CMS_KV.put("asess:" + t, "admin", { expirationTtl: 60 * 60 * 12 });
+      return json({ token: t, enrolled: !!(await env.CMS_KV.get("admin_totp")), override: true });
+    }
     if (b.token !== env.ADMIN_TOKEN) return bad("Invalid admin token", 401);
     const enrolled = await env.CMS_KV.get("admin_totp");
     if (enrolled) {
