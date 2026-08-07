@@ -23,7 +23,7 @@
  *
  * 3. Secrets — `wrangler secret put NAME` for each:
  *      SESSION_PEPPER        long random string (openssl rand -hex 32)
- *      UKVD_API_KEY          UK Vehicle Data Ltd key
+ *      UKVD_API_KEY          Vehicle Data Global key (r2/lookup, TyreDetails package)
  *      TIRE_API_KEY          tire.vdim.app key (554fba09...de3f)
  *      TWILIO_SID            Twilio Account SID
  *      TWILIO_TOKEN          Twilio Auth Token
@@ -33,8 +33,10 @@
  *      GCAL_CALENDAR_ID      calendar id the invites land on (share it with the service account)
  *      RESEND_API_KEY        Resend API key (resend.com — free 3,000 emails/mo)
  *      MAIL_FROM             from address on a domain verified in Resend, e.g. bookings@cousinsmechanical.co.uk
+ *      OWNER_PHONE           the business owner's number (E.164, e.g. 447925340977) — gets WhatsApp/SMS on new customer messages
  *      SITE_URL              your live site URL, e.g. https://cousinsmechanical.co.uk (used in reset links)
  *      ADMIN_TOKEN           long random string — the admin dashboard password + status-text auth
+ *      (2FA: enrolled in-app; the TOTP secret is stored in KV as "admin_totp", not a Worker secret)
  *
  *    Any secret you leave unset simply disables that channel (the booking still succeeds).
  *
@@ -47,7 +49,7 @@
  * If your UK Vehicle Data package isn't "TyreData", change UKVD_PACKAGE.
  */
 
-const UKVD_PACKAGE = "TyreData";
+const UKVD_PACKAGE = "TyreDetails";
 const ALLOW_ORIGIN = "*"; // tighten to your domain in production
 const RETENTION_DAYS = 365; // GDPR storage limitation: purge finished jobs after this
 const PRIVACY_VERSION = "2026-08-05"; // bump when your privacy notice changes to re-request consent
@@ -73,6 +75,41 @@ async function pbkdf2(password, saltB64, pepper) {
   return b64(bits);
 }
 function token() { return b64(crypto.getRandomValues(new Uint8Array(32))).replace(/[^a-zA-Z0-9]/g, "").slice(0, 40); }
+
+// ---------- TOTP 2FA (RFC 6238, SHA-1, 6 digits, 30s) ----------
+function b32decode(s) {
+  s = (s || "").replace(/=+$/, "").toUpperCase(); const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = 0, val = 0; const out = [];
+  for (const c of s) { const i = A.indexOf(c); if (i < 0) continue; val = (val << 5) | i; bits += 5; if (bits >= 8) { out.push((val >> (bits - 8)) & 0xff); bits -= 8; } }
+  return new Uint8Array(out);
+}
+function b32encode(bytes) {
+  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; let bits = 0, val = 0, out = "";
+  for (const b of bytes) { val = (val << 8) | b; bits += 8; while (bits >= 5) { out += A[(val >> (bits - 5)) & 31]; bits -= 5; } }
+  if (bits > 0) out += A[(val << (5 - bits)) & 31];
+  return out;
+}
+async function totpAt(secret, step) {
+  const key = b32decode(secret); const msg = new ArrayBuffer(8); const dv = new DataView(msg); dv.setUint32(4, step);
+  const ck = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", ck, msg));
+  const off = sig[19] & 0xf;
+  const code = ((sig[off] & 0x7f) << 24) | ((sig[off + 1] & 0xff) << 16) | ((sig[off + 2] & 0xff) << 8) | (sig[off + 3] & 0xff);
+  return (code % 1000000).toString().padStart(6, "0");
+}
+async function totpValid(secret, code) {
+  const c = String(code || "").trim(); if (!/^\d{6}$/.test(c)) return false;
+  const now = Math.floor(Date.now() / 30000);
+  for (let w = -1; w <= 1; w++) if (await totpAt(secret, now + w) === c) return true;
+  return false;
+}
+async function isAdmin(request, env) {
+  const t = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  if (!t) return false;
+  const enrolled = await env.CMS_KV.get("admin_totp");
+  if (!enrolled) return t === env.ADMIN_TOKEN;      // 2FA not set up yet: token alone works
+  return (await env.CMS_KV.get("asess:" + t)) != null; // once enrolled, only a verified session works
+}
 function ref() { return "CMS-" + Date.now().toString(36).toUpperCase().slice(-5); }
 
 async function sessionUser(request, env) {
@@ -349,6 +386,29 @@ async function api(request, env, url, ctx) {
     return json({ ok: true, erased: true });
   }
 
+  // --- MESSAGING: customer <-> business (stored per customer) ---
+  if (p === "/messages") {
+    const u = await sessionUser(request, env);
+    if (!u) return bad("Not signed in", 401);
+    const key = "msgs:" + u.email;
+    const thread = JSON.parse((await env.CMS_KV.get(key)) || "[]");
+    if (request.method === "GET") return json({ messages: thread });
+    if (request.method === "POST") {
+      const b = await request.json().catch(() => ({}));
+      const text = String(b.text || "").slice(0, 2000).trim();
+      if (!text) return bad("Empty message");
+      thread.push({ t: Date.now(), from: "customer", text, read: false });
+      await env.CMS_KV.put(key, JSON.stringify(thread.slice(-200)));
+      // flag that this customer has an unread message for the admin
+      const inbox = JSON.parse((await env.CMS_KV.get("inbox")) || "{}");
+      inbox[u.email] = { name: u.name, phone: u.phone, last: text, t: Date.now(), unread: (inbox[u.email]?.unread || 0) + 1 };
+      await env.CMS_KV.put("inbox", JSON.stringify(inbox));
+      // notify the business by WhatsApp/SMS if configured
+      ctx.waitUntil(sendSMS(env, env.OWNER_PHONE || "", `New message from ${u.name} (${u.phone}): ${text}`));
+      return json({ messages: thread });
+    }
+  }
+
   // --- BOOKINGS (per account) ---
   if (p === "/bookings") {
     const u = await sessionUser(request, env);
@@ -399,7 +459,7 @@ async function api(request, env, url, ctx) {
 
   // --- Driver/admin: push a live status text (protected by ADMIN_TOKEN secret) ---
   if (p === "/notify" && request.method === "POST") {
-    if ((request.headers.get("authorization") || "") !== "Bearer " + env.ADMIN_TOKEN) return bad("Forbidden", 403);
+    if (!(await isAdmin(request, env))) return bad("Forbidden", 403);
     const { email, ref: r, message } = await request.json().catch(() => ({}));
     const raw = await env.CMS_KV.get("user:" + (email || "").toLowerCase());
     if (!raw) return bad("Unknown customer", 404);
@@ -411,11 +471,36 @@ async function api(request, env, url, ctx) {
 
   // --- LIVE LOCATION: driver posts GPS, customer reads it for their own job ---
   if (p === "/driver/location" && request.method === "POST") {
-    if ((request.headers.get("authorization") || "") !== "Bearer " + env.ADMIN_TOKEN) return bad("Forbidden", 403);
-    const { ref: r, lat, lng, eta } = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => ({}));
+    const okAdmin = (await isAdmin(request, env)) || body.token === env.ADMIN_TOKEN;
+    if (!okAdmin) return bad("Forbidden", 403);
+    const { ref: r, lat, lng, eta, arrived } = body;
     if (!r) return bad("Missing ref");
-    await env.CMS_KV.put("loc:" + r, JSON.stringify({ lat, lng, eta, t: Date.now() }), { expirationTtl: 3600 });
+    if (arrived) {
+      const list = await env.CMS_KV.list({ prefix: "bookings:" });
+      for (const k of list.keys) {
+        const arr = JSON.parse((await env.CMS_KV.get(k.name)) || "[]");
+        let changed = false;
+        for (const o of arr) if (o.ref === r && o.status !== "arrived") { o.status = "arrived"; o.updates = [...(o.updates || []), { t: Date.now(), s: "Arrived", d: "Your mechanic is with you." }]; changed = true; }
+        if (changed) await env.CMS_KV.put(k.name, JSON.stringify(arr));
+      }
+    } else {
+      await env.CMS_KV.put("loc:" + r, JSON.stringify({ lat, lng, eta, t: Date.now() }), { expirationTtl: 3600 });
+    }
     return json({ ok: true });
+  }
+  // Driver page needs the active job list without a 2FA session — gated by the admin token in the body.
+  if (p === "/driver/jobs" && request.method === "POST") {
+    const body = await request.json().catch(() => ({}));
+    if (body.token !== env.ADMIN_TOKEN && !(await isAdmin(request, env))) return bad("Forbidden", 403);
+    const out = [];
+    const list = await env.CMS_KV.list({ prefix: "bookings:" });
+    for (const k of list.keys) {
+      const arr = JSON.parse((await env.CMS_KV.get(k.name)) || "[]");
+      for (const o of arr) if (o.status !== "cancelled" && o.status !== "complete")
+        out.push({ ref: o.ref, svcLabel: o.svcLabel, reg: o.reg, postcode: o.postcode, name: o.name, date: o.date, time: o.time, status: o.status });
+    }
+    return json({ jobs: out });
   }
   const tm = p.match(/^\/track\/([\w-]+)$/);
   if (tm && request.method === "GET") {
@@ -428,9 +513,43 @@ async function api(request, env, url, ctx) {
     return json({ status: job.status, updates: job.updates || [], location: loc });
   }
 
-  // --- ADMIN (business owner) — all protected by ADMIN_TOKEN ---
+  // --- ADMIN LOGIN + 2FA ---
+  // Step 1: exchange admin token (+ TOTP code once enrolled) for a short-lived admin session.
+  if (p === "/admin-login" && request.method === "POST") {
+    const b = await request.json().catch(() => ({}));
+    if (b.token !== env.ADMIN_TOKEN) return bad("Invalid admin token", 401);
+    const enrolled = await env.CMS_KV.get("admin_totp");
+    if (enrolled) {
+      if (!(await totpValid(enrolled, b.code))) return bad("Enter the 6-digit code from your authenticator app.", 401);
+    }
+    const t = token();
+    await env.CMS_KV.put("asess:" + t, "admin", { expirationTtl: 60 * 60 * 12 });
+    return json({ token: t, enrolled: !!enrolled });
+  }
+  // Generate a new secret to enroll an authenticator (must know the admin token).
+  if (p === "/admin-2fa/new" && request.method === "POST") {
+    const b = await request.json().catch(() => ({}));
+    if (b.token !== env.ADMIN_TOKEN) return bad("Invalid admin token", 401);
+    const secret = b32encode(crypto.getRandomValues(new Uint8Array(20)));
+    const label = encodeURIComponent("Cousins Mechanical Admin");
+    const otpauth = `otpauth://totp/${label}?secret=${secret}&issuer=Cousins%20Mechanical&algorithm=SHA1&digits=6&period=30`;
+    return json({ secret, otpauth, alreadyEnrolled: !!(await env.CMS_KV.get("admin_totp")) });
+  }
+  // Confirm the code works, then lock 2FA on. From now, admin login requires the app.
+  if (p === "/admin-2fa/enable" && request.method === "POST") {
+    const b = await request.json().catch(() => ({}));
+    if (b.token !== env.ADMIN_TOKEN) return bad("Invalid admin token", 401);
+    if (!b.secret || !(await totpValid(b.secret, b.code))) return bad("That code didn't match — check the app and try again.", 400);
+    await env.CMS_KV.put("admin_totp", b.secret);
+    return json({ ok: true });
+  }
+  if (p === "/admin-2fa/status" && request.method === "GET") {
+    return json({ enrolled: !!(await env.CMS_KV.get("admin_totp")) });
+  }
+
+  // --- ADMIN (business owner) — all protected by 2FA-verified session ---
   if (p.startsWith("/admin/")) {
-    if ((request.headers.get("authorization") || "") !== "Bearer " + env.ADMIN_TOKEN) return bad("Forbidden", 403);
+    if (!(await isAdmin(request, env))) return bad("Forbidden", 403);
 
     // All jobs across every customer
     if (p === "/admin/jobs" && request.method === "GET") {
@@ -461,6 +580,38 @@ async function api(request, env, url, ctx) {
       const uraw = await env.CMS_KV.get("user:" + email);
       if (uraw) { const u = JSON.parse(uraw); if (u.smsUpdates !== false && b.sms) ctx.waitUntil(sendSMS(env, u.phone, b.sms)); }
       return json({ job: arr[i] });
+    }
+
+    // --- MESSAGING (admin): list threads, read a thread, reply ---
+    if (p === "/admin/threads" && request.method === "GET") {
+      const inbox = JSON.parse((await env.CMS_KV.get("inbox")) || "{}");
+      const out = Object.entries(inbox).map(([email, v]) => ({ email, ...v }));
+      out.sort((a, b) => (b.t || 0) - (a.t || 0));
+      return json({ threads: out });
+    }
+    const tmA = p.match(/^\/admin\/threads\/(.+)$/);
+    if (tmA) {
+      const email = decodeURIComponent(tmA[1]).toLowerCase();
+      const key = "msgs:" + email;
+      if (request.method === "GET") {
+        const thread = JSON.parse((await env.CMS_KV.get(key)) || "[]").map(m => ({ ...m, read: true }));
+        await env.CMS_KV.put(key, JSON.stringify(thread));
+        const inbox = JSON.parse((await env.CMS_KV.get("inbox")) || "{}");
+        if (inbox[email]) { inbox[email].unread = 0; await env.CMS_KV.put("inbox", JSON.stringify(inbox)); }
+        return json({ messages: thread });
+      }
+      if (request.method === "POST") {
+        const b = await request.json().catch(() => ({}));
+        const text = String(b.text || "").slice(0, 2000).trim();
+        if (!text) return bad("Empty message");
+        const thread = JSON.parse((await env.CMS_KV.get(key)) || "[]");
+        thread.push({ t: Date.now(), from: "admin", text, read: true });
+        await env.CMS_KV.put(key, JSON.stringify(thread.slice(-200)));
+        // push the reply to the customer by WhatsApp/SMS if opted in
+        const uraw = await env.CMS_KV.get("user:" + email);
+        if (uraw) { const u = JSON.parse(uraw); if (u.smsUpdates !== false) ctx.waitUntil(sendSMS(env, u.phone, "Cousins Mechanical: " + text)); }
+        return json({ messages: thread });
+      }
     }
 
     // Customers
@@ -510,10 +661,9 @@ async function api(request, env, url, ctx) {
     const vrm = (url.searchParams.get("vrm") || "").toUpperCase().replace(/\s+/g, "");
     if (!vrm) return bad("Missing vrm");
     const pkg = url.searchParams.get("package") || UKVD_PACKAGE;
-    // Sandbox vs live: set UKVD_BASE secret to your key's base URL. Defaults to live.
-    // UKVD sandbox base is typically https://uk1.ukvehicledata.co.uk/api/datapackage
-    const base = (env.UKVD_BASE || "https://uk1.ukvehicledata.co.uk/api/datapackage").replace(/\/+$/, "");
-    const target = `${base}/${pkg}?v=2&api_nullitems=1&auth_apikey=${env.UKVD_API_KEY}&key_VRM=${encodeURIComponent(vrm)}`;
+    // Vehicle Data Global (r2) — apiKey + packageName + key_VRM as query params.
+    const base = (env.UKVD_BASE || "https://uk.api.vehicledataglobal.com/r2/lookup").replace(/\/+$/, "");
+    const target = `${base}?apiKey=${encodeURIComponent(env.UKVD_API_KEY)}&packageName=${encodeURIComponent(pkg)}&key_VRM=${encodeURIComponent(vrm)}`;
     const r = await fetch(target, { headers: { accept: "application/json" } }).catch(() => null);
     if (!r) return bad("UK Vehicle Data unreachable", 502);
     return new Response(await r.text(), { status: r.status, headers: { ...CORS, "content-type": "application/json" } });

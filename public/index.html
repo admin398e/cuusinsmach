@@ -533,10 +533,11 @@
             <div style="display:inline-block;background:#14100e;color:#f4a04a;font-family:'Barlow Condensed';font-weight:800;font-size:22px;letter-spacing:.08em;border-radius:10px;padding:8px 18px">{{ lastRef }}</div>
             <div style="background:#faf7f3;border:1px solid #eee3d8;border-radius:12px;padding:16px;margin:20px 0;text-align:left;font-size:14px;color:#5c534d;line-height:1.6">
               {{ confirmSummary }}<br/>
-              <span style="color:#39a854;font-weight:700">✓ Confirmation email &amp; calendar invite sent</span><br/>
-              <span style="color:#39a854;font-weight:700">✓ You'll get live SMS updates on the day</span>
+              <span style="color:#39a854;font-weight:700">✓ Tap below to confirm with us on WhatsApp</span><br/>
+              <span style="color:#39a854;font-weight:700">✓ You'll get live updates on the day</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:10px">
+              <a href="{{ waConfirm }}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:9px;background:#25d366;color:#0a2c17;font-weight:700;border-radius:10px;padding:14px;font-size:15px;text-decoration:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="#0a2c17"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.1-.6.2s-.7.9-.9 1.1c-.2.2-.3.2-.6.1a8 8 0 0 1-2.4-1.5 9 9 0 0 1-1.6-2c-.2-.3 0-.4.1-.6l.4-.5.3-.5c.1-.2 0-.4 0-.5L8.7 6.6c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.3.3-1 .9-1 2.3s1 2.7 1.2 2.9c.1.2 2 3.1 5 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3l-.6-.4ZM12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.3A10 10 0 1 0 12 2Z"/></svg>Confirm on WhatsApp</a>
               <button onClick="{{ downloadIcs }}" style="background:#1c1817;color:#fff;font-weight:700;border:0;border-radius:10px;padding:13px;cursor:pointer;font-size:15px">📅 Add to my calendar (.ics)</button>
               <button onClick="{{ goTrack }}" style="background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:10px;padding:13px;cursor:pointer;font-size:15px">Track my job live →</button>
             </div>
@@ -573,6 +574,7 @@
         <div style="display:flex;gap:4px;margin-top:16px">
           <button onClick="{{ tabBookings }}" style="{{ tabBookingsStyle }}">Bookings <span style="{{ countPillStyle }}">{{ activeCount }}</span></button>
           <button onClick="{{ tabOffers }}" style="{{ tabOffersStyle }}">Offers</button>
+          <button onClick="{{ tabMessages }}" style="{{ tabMessagesStyle }}">Messages</button>
           <button onClick="{{ tabAccount }}" style="{{ tabAccountStyle }}">Account</button>
         </div>
         </sc-if>
@@ -725,6 +727,32 @@
           </div>
         </sc-if>
 
+        <!-- MESSAGES TAB -->
+        <sc-if value="{{ onMessages }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;height:min(52vh,440px);animation:fadeIn .25s ease">
+            <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px 12px">
+              <sc-if value="{{ noMessages }}" hint-placeholder-val="{{ true }}">
+                <div style="text-align:center;color:#8a817b;padding:30px 12px">
+                  <div style="width:52px;height:52px;margin:0 auto 12px;border-radius:13px;background:#f4f2ef;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#c25e0c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></div>
+                  <div style="font-weight:700;color:#1c1817;font-size:15px;margin-bottom:3px">Message Cousins directly</div>
+                  <div style="font-size:13.5px;line-height:1.5;max-width:280px;margin:0 auto">Ask a question about your booking, parts or a quote. We'll reply here and by text.</div>
+                </div>
+              </sc-if>
+              <sc-for list="{{ msgRows }}" as="m" hint-placeholder-count="0">
+                <div style="{{ m.rowStyle }}">
+                  <div style="{{ m.bubbleStyle }}">{{ m.text }}</div>
+                  <div style="font-size:10.5px;color:#b3aaa3;margin-top:3px;{{ m.metaAlign }}">{{ m.who }} · {{ m.time }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:8px;border-top:1px solid #eee3d8;padding-top:12px">
+              <input value="{{ msgInput }}" onInput="{{ setMsgInput }}" onKeyDown="{{ msgKey }}" placeholder="Type a message…" style="flex:1;border:1.5px solid #ddd4cb;border-radius:10px;padding:12px 14px;font-size:15px"/>
+              <button onClick="{{ sendMessage }}" style="background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:10px;padding:0 20px;cursor:pointer">Send</button>
+            </div>
+            <a href="https://wa.me/447925340977" target="_blank" style="text-align:center;color:#25a35a;font-weight:700;font-size:13px;margin-top:10px">Prefer WhatsApp? Message us there →</a>
+          </div>
+        </sc-if>
+
         <!-- ACCOUNT TAB -->
         <sc-if value="{{ onAccount }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex;flex-direction:column;gap:14px;animation:fadeIn .25s ease">
@@ -816,6 +844,7 @@ class Component extends DCLogic {
     book: { reg:'', service:'', svcLabel:'', postcode:'', date:'', time:'', name:'', phone:'', email:'', notes:'', calendar:true },
     locHint: 'We use this to route the van straight to you.',
     portalOpen: false, portalTab:'bookings', orders: [], editing: '', editDate:'', editTime:'', editNotes:'',
+    messages: [], msgInput:'', msgBusy:false,
     profile: { name:'', phone:'', email:'', marketing:true }, profileSaved:false,
     auth: null, authView:'login', authName:'', authEmail:'', authPhone:'', authPass:'', authPass2:'', authErr:'', authBusy:false,
     authConsent:false, authSms:true, authMarketing:false,
@@ -893,6 +922,11 @@ class Component extends DCLogic {
     if(!arr && d && typeof d==='object'){ arr = d.data||d.results||d.items||d.makes||d.models||d.trims||d.years||d.values||d.list; if(!Array.isArray(arr)){ for(const k in d){ if(Array.isArray(d[k])){ arr=d[k]; break; } } } }
     if(!Array.isArray(arr)) return [];
     return arr.map(x=> typeof x==='object' ? (x.name||x.make||x.model||x.trim||x.year||x.value||x.label||Object.values(x)[0]) : x).filter(v=>v!==undefined&&v!==null&&v!=='').map(String);
+  }
+  buildSize(t){
+    if(!t) return '';
+    const w=t.sectionWidthMm||t.sectionWidth, a=t.aspectRatio, r=t.rimDiameterInches||t.rimDiameter;
+    return (w&&a&&r) ? (w+'/'+a+' R'+r) : '';
   }
   extractSize(d){
     if(!d) return '';
@@ -985,7 +1019,7 @@ class Component extends DCLogic {
         if(r.ok){
           const d = await r.json();
           const v = this.normalise(reg, d, 'ukvd');
-          if(v.make && v.make!=='Vehicle'){ this._live = true; return v; }
+          if(v.tyre){ this._live = true; return v; }
         }
       }catch(e){ /* fall through to sample */ }
     }
@@ -996,23 +1030,23 @@ class Component extends DCLogic {
   }
   normalise(reg, d, provider){
     if(provider==='ukvd'){
-      const di = (d.Response && d.Response.DataItems) || d.DataItems || d.Results || d;
-      const vr = di.VehicleRegistration || di.SmmtDetails || di.VehicleDetails || {};
-      const make = vr.Make || di.Make || vr.MakeModel || 'Vehicle';
-      const model = vr.Model || vr.Range || (di.SmmtDetails && (di.SmmtDetails.Range||di.SmmtDetails.ModelVariant)) || di.Model || '';
-      const year = vr.YearOfManufacture || vr.YearMonthFirstRegistered || di.Year || '';
-      const colour = vr.Colour || di.Colour || '';
-      const fuel = vr.FuelType || di.FuelType || '';
-      const engine = vr.EngineCapacity || di.EngineCapacity || '';
-      const tyreSrc = di.TyreDetails || di.TyreData || di.TechnicalDetails || di.TyreDetailsList || di;
-      const size = this.extractSize(tyreSrc);
-      return this.pack(reg, make, String(model).trim(), year, colour, fuel, size, engine);
+      // Vehicle Data Global r2: { results: { tyreDetails: { tyreDetailsList:[ { vehicle, front:{tyre:{sizeDescription}}, rear } ] } } }
+      const res = d.results || d.Results || d;
+      const td = res.tyreDetails || res.TyreDetails || {};
+      const list = td.tyreDetailsList || td.TyreDetailsList || [];
+      const item = list.find(x=>x && x.isStandardFitmentForVehicle) || list[0] || {};
+      const veh = item.vehicle || {};
+      const front = item.front || {};
+      const size = (front.tyre && (front.tyre.sizeDescription || this.buildSize(front.tyre))) || this.extractSize(td) || '';
+      const model = veh.modelName || '';
+      const year = (veh.year && (veh.year.uk || veh.year.euro)) || '';
+      // r2 tyre package carries model/year but not make/colour/fuel — keep them blank rather than guess
+      return this.pack(reg, 'Vehicle', String(model).trim(), year, '', '', size, '');
     }
     // custom / already-normalised
     return this.pack(reg, d.make||'Vehicle', d.model||'', d.year||d.yearOfManufacture||'', d.colour||d.color||'', d.fuelType||d.fuel||'', d.tyreSize||d.tyre||'', d.engineCapacity||d.engine||'');
   }
-  pack(reg, make, model, year, colour, fuel, tyre, engine){
-    return {
+  pack(reg, make, model, year, colour, fuel, tyre, engine){    return {
       reg, make, model, year, colour, fuel, tyre, engine,
       title: (make + ' ' + model).trim(),
       line2: [colour, fuel, year, engine?engine+'cc':''].filter(Boolean).join(' · ')
@@ -1087,8 +1121,8 @@ class Component extends DCLogic {
     navigator.geolocation.getCurrentPosition(
       pos=>{ const la=pos.coords.latitude, lo=pos.coords.longitude;
         this.setState(s=>({ book:{...s.book, postcode:'📍 '+la.toFixed(5)+', '+lo.toFixed(5), lat:la, lng:lo}, locHint:'Location captured — the van will be routed to you.' })); },
-      ()=>this.setState({locHint:'Could not get GPS — please type your postcode.'}),
-      { enableHighAccuracy:true, timeout:12000 }
+      err=>{ const m = err.code===1 ? 'Location permission denied — allow location for this site in your browser, or type your postcode.' : err.code===2 ? 'Location unavailable right now — please type your postcode.' : 'Location timed out — please type your postcode.'; this.setState({locHint:m}); },
+      { enableHighAccuracy:true, timeout:15000, maximumAge:0 }
     );
   };
 
@@ -1236,12 +1270,23 @@ class Component extends DCLogic {
   logout = () => { if(this.hasServer()){ this.apiFetch('/auth/logout',{method:'POST'}).catch(()=>{}); } try{ localStorage.removeItem('cms_session'); localStorage.removeItem('cms_token'); }catch(e){} this.setState({auth:null, authView:'login', authPass:'', authPass2:'', portalOpen:false}); };
 
   // ---------- PORTAL / ACCOUNT ----------
-  openPortal = () => { this.loadOrders(); this.loadProfile(); this.setState({portalOpen:true, portalTab:'bookings', authErr:''}); };
+  openPortal = () => { this.loadOrders(); this.loadProfile(); this.loadMessages(); this.setState({portalOpen:true, portalTab:'bookings', authErr:''}); };
   closePortal = () => this.setState({portalOpen:false, editing:''});
   portalToBook = () => this.setState({portalOpen:false, bookOpen:true, bookStep:1, bookDone:false});
   tabBookings = () => this.setState({portalTab:'bookings'});
   tabOffers = () => this.setState({portalTab:'offers'});
+  tabMessages = () => { this.setState({portalTab:'messages'}); this.loadMessages(); };
   tabAccount = () => this.setState({portalTab:'account'});
+  setMsgInput = e => this.setState({msgInput:e.target.value});
+  loadMessages(){ if(!this.hasServer()||!this.state.auth) return; this.apiFetch('/messages').then(r=>r.json()).then(d=>{ if(d.messages) this.setState({messages:d.messages}); }).catch(()=>{}); }
+  sendMessage = () => {
+    const text=(this.state.msgInput||'').trim(); if(!text) return;
+    const optimistic={ t:Date.now(), from:'customer', text };
+    this.setState(s=>({messages:[...s.messages, optimistic], msgInput:'', msgBusy:true}));
+    if(this.hasServer()&&this.state.auth){
+      this.apiFetch('/messages',{method:'POST',body:JSON.stringify({text})}).then(r=>r.json()).then(d=>{ if(d.messages) this.setState({messages:d.messages, msgBusy:false}); else this.setState({msgBusy:false}); }).catch(()=>this.setState({msgBusy:false}));
+    } else this.setState({msgBusy:false});
+  };
   loadProfile(){ try{ const p=JSON.parse(localStorage.getItem('cms_profile')||'null'); if(p) this.setState({profile:{marketing:true,...p}}); }catch(e){} }
   setProfName = e => this.setState(s=>({profile:{...s.profile,name:e.target.value},profileSaved:false}));
   setProfPhone = e => this.setState(s=>({profile:{...s.profile,phone:e.target.value},profileSaved:false}));
@@ -1526,6 +1571,7 @@ class Component extends DCLogic {
       bookBack:this.bookBack, bookNext:this.bookNext, canBack:s.bookStep>1, nextLabel,
       nextBtnStyle:'flex:1;background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:10px;padding:13px;cursor:pointer;font-size:15.5px',
       lastRef:s.lastRef, confirmSummary, downloadIcs:this.downloadIcs, goTrack:this.goTrack,
+      waConfirm: 'https://wa.me/447925340977?text='+encodeURIComponent('Hi Cousins, confirming my booking '+(s.lastRef||'')+' — '+(s.book.svcLabel||'mobile job')+' for '+(s.book.reg||'')+' on '+this.fmtDate(s.book.date)+' '+(s.book.time||'')+' at '+(s.book.postcode||'my location')+'.'),
       // portal / account
       portalOpen:s.portalOpen, openPortal:this.openPortal, closePortal:this.closePortal, portalToBook:this.portalToBook,
       acctBtnLabel: s.auth ? ((s.profile.name||s.auth.name||'Account').split(/\s+/)[0]) : 'Log in',
@@ -1547,6 +1593,15 @@ class Component extends DCLogic {
       loginSegStyle:'flex:1;border:0;cursor:pointer;border-radius:8px;padding:10px;font-weight:700;font-size:14px;'+(s.authView==='login'?'background:#fff;color:#1c1817;box-shadow:0 1px 3px rgba(0,0,0,.12)':'background:transparent;color:#8a817b'),
       signupSegStyle:'flex:1;border:0;cursor:pointer;border-radius:8px;padding:10px;font-weight:700;font-size:14px;'+(s.authView==='signup'?'background:#fff;color:#1c1817;box-shadow:0 1px 3px rgba(0,0,0,.12)':'background:transparent;color:#8a817b'),
       onBookings: s.portalTab==='bookings', onOffers: s.portalTab==='offers', onAccount: s.portalTab==='account',
+      onMessages: s.portalTab==='messages',
+      tabMessages:this.tabMessages, tabMessagesStyle: portalTabStyle(s.portalTab==='messages'),
+      msgInput:s.msgInput, setMsgInput:this.setMsgInput, sendMessage:this.sendMessage,
+      msgKey:(e)=>{ if(e.key==='Enter') this.sendMessage(); },
+      noMessages: s.messages.length===0,
+      msgRows: s.messages.map(m=>{ const mine=m.from==='customer'; return { text:m.text, who: mine?'You':'Cousins', time: this.fmtTime(m.t),
+        rowStyle:'display:flex;flex-direction:column;'+(mine?'align-items:flex-end':'align-items:flex-start'),
+        bubbleStyle:'max-width:80%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.4;'+(mine?'background:#e8791a;color:#14100e;border-bottom-right-radius:4px':'background:#f0ebe5;color:#1c1817;border-bottom-left-radius:4px'),
+        metaAlign: mine?'text-align:right':'text-align:left' }; }),
       tabBookings:this.tabBookings, tabOffers:this.tabOffers, tabAccount:this.tabAccount,
       tabBookingsStyle: portalTabStyle(s.portalTab==='bookings'), tabOffersStyle: portalTabStyle(s.portalTab==='offers'), tabAccountStyle: portalTabStyle(s.portalTab==='account'),
       acctName: s.auth ? (s.profile.name||s.auth.name||'Your account') : 'My account',

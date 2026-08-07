@@ -18,7 +18,7 @@
   input,select,textarea,button{font-family:inherit}
   input:focus,select:focus{outline:none;border-color:#e8791a!important}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  @media(max-width:760px){.adm-kpi{grid-template-columns:1fr 1fr!important}.adm-stockform{grid-template-columns:1fr 1fr!important}}
+  @media(max-width:760px){.adm-kpi{grid-template-columns:1fr 1fr!important}.adm-stockform{grid-template-columns:1fr 1fr!important}.adm-msg{grid-template-columns:1fr!important}}
   .adm-th{text-align:left;font-family:'Barlow Condensed';font-weight:700;letter-spacing:.06em;color:#9a918a;font-size:12.5px;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #2a2320}
   .adm-td{padding:12px 14px;border-bottom:1px solid #201b18;font-size:14px;color:#d9d2cc;vertical-align:middle}
 </style>
@@ -36,9 +36,36 @@
       <div style="color:#9a918a;font-size:13.5px;margin-bottom:20px">Staff only. Enter your admin access token.</div>
       <input value="{{ tokenInput }}" onInput="{{ setToken }}" onKeyDown="{{ onKey }}" type="password" placeholder="Admin token" style="width:100%;border:1.5px solid #3a322d;background:#14100e;color:#fff;border-radius:10px;padding:13px 14px;font-size:16px;margin-bottom:10px"/>
       <input value="{{ apiInput }}" onInput="{{ setApi }}" placeholder="Worker URL (blank = same site)" style="width:100%;border:1.5px solid #3a322d;background:#14100e;color:#fff;border-radius:10px;padding:12px 14px;font-size:14px;margin-bottom:14px"/>
+      <sc-if value="{{ needCode }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:14px">
+          <div style="color:#f4a04a;font-size:12.5px;font-weight:700;margin-bottom:6px">Two-factor required — enter the 6-digit code from your authenticator app</div>
+          <input value="{{ codeInput }}" onInput="{{ setCode }}" onKeyDown="{{ onKey }}" inputmode="numeric" placeholder="123456" style="width:100%;border:1.5px solid #e8791a;background:#14100e;color:#fff;border-radius:10px;padding:13px 14px;font-size:22px;letter-spacing:.3em;text-align:center;font-family:'Barlow Condensed';font-weight:700"/>
+        </div>
+      </sc-if>
       <sc-if value="{{ loginErr }}" hint-placeholder-val="{{ false }}"><div style="background:rgba(165,64,26,.2);border:1px solid #6b3520;color:#f0a884;border-radius:9px;padding:10px 13px;font-size:13.5px;margin-bottom:12px">{{ loginErr }}</div></sc-if>
       <button onClick="{{ login }}" style="width:100%;background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:10px;padding:14px;cursor:pointer;font-size:15.5px">{{ loginLabel }}</button>
-      <div style="color:#6f6862;font-size:12px;margin-top:14px;line-height:1.5">The token is your Worker's <strong>ADMIN_TOKEN</strong> secret. In demo mode (no Worker) any token opens sample data.</div>
+      <button onClick="{{ start2fa }}" style="width:100%;background:none;border:0;color:#9a918a;font-weight:600;cursor:pointer;font-size:12.5px;margin-top:12px;text-decoration:underline">Set up / enable two-factor authentication</button>
+      <div style="color:#6f6862;font-size:12px;margin-top:8px;line-height:1.5">The token is your Worker's <strong>ADMIN_TOKEN</strong>. Once 2FA is enabled, login also needs your authenticator code.</div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- 2FA ENROLLMENT -->
+<sc-if value="{{ twofaOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:100;background:rgba(10,8,7,.8);display:flex;align-items:center;justify-content:center;padding:24px" onClick="{{ close2fa }}">
+    <div style="width:100%;max-width:420px;background:#1c1714;border:1px solid #2a2320;border-radius:18px;padding:28px" onClick="{{ stop }}">
+      <div style="font-family:'Barlow Condensed';font-weight:800;font-size:22px;color:#fff;margin-bottom:6px">ENABLE TWO-FACTOR</div>
+      <div style="color:#9a918a;font-size:13px;line-height:1.5;margin-bottom:16px">In Google Authenticator / Authy, tap add and either scan or paste this setup key, then enter the 6-digit code to confirm.</div>
+      <div style="background:#14100e;border:1px dashed #3a322d;border-radius:10px;padding:12px;text-align:center;margin-bottom:14px">
+        <div style="color:#6f6862;font-size:11px;letter-spacing:.1em;margin-bottom:4px">SETUP KEY</div>
+        <div style="color:#f4a04a;font-family:'Barlow Condensed';font-weight:700;font-size:18px;word-break:break-all;letter-spacing:.05em">{{ twofaSecret }}</div>
+      </div>
+      <input value="{{ enrollCode }}" onInput="{{ setEnrollCode }}" inputmode="numeric" placeholder="6-digit code" style="width:100%;border:1.5px solid #3a322d;background:#14100e;color:#fff;border-radius:10px;padding:13px 14px;font-size:20px;letter-spacing:.3em;text-align:center;margin-bottom:12px"/>
+      <sc-if value="{{ twofaErr }}" hint-placeholder-val="{{ false }}"><div style="background:rgba(165,64,26,.2);border:1px solid #6b3520;color:#f0a884;border-radius:9px;padding:10px 13px;font-size:13px;margin-bottom:12px">{{ twofaErr }}</div></sc-if>
+      <div style="display:flex;gap:10px">
+        <button onClick="{{ enable2fa }}" style="flex:1;background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:10px;padding:13px;cursor:pointer">Confirm &amp; enable</button>
+        <button onClick="{{ close2fa }}" style="background:#2a2320;color:#d9d2cc;font-weight:700;border:0;border-radius:10px;padding:13px 18px;cursor:pointer">Cancel</button>
+      </div>
     </div>
   </div>
 </sc-if>
@@ -163,10 +190,40 @@
         </div>
       </sc-if>
 
+      <!-- MESSAGES -->
+      <sc-if value="{{ onMessages }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:300px 1fr;gap:16px;animation:fadeIn .2s ease" class="adm-msg">
+          <div style="background:#1c1714;border:1px solid #2a2320;border-radius:14px;overflow:hidden;max-height:600px;overflow-y:auto">
+            <sc-if value="{{ noThreads }}" hint-placeholder-val="{{ true }}"><div style="padding:26px;text-align:center;color:#8a817b;font-size:13.5px">No customer messages yet.</div></sc-if>
+            <sc-for list="{{ threadRows }}" as="t" hint-placeholder-count="0">
+              <div onClick="{{ t.open }}" style="{{ t.rowStyle }}">
+                <span style="{{ t.dotStyle }}"></span>
+                <div style="flex:1;min-width:0"><div style="color:#fff;font-weight:700;font-size:14px">{{ t.name }}</div><div style="color:#8a817b;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.last }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#1c1714;border:1px solid #2a2320;border-radius:14px;display:flex;flex-direction:column;min-height:420px;max-height:600px">
+            <sc-if value="{{ hasActiveThread }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ threadMsgs }}" as="m" hint-placeholder-count="0">
+                  <div style="{{ m.rowStyle }}"><div style="{{ m.bubbleStyle }}">{{ m.text }}</div><div style="font-size:10px;color:#6f6862;margin-top:3px">{{ m.who }} · {{ m.time }}</div></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:8px;border-top:1px solid #2a2320;padding:12px">
+                <input value="{{ replyInput }}" onInput="{{ setReply }}" onKeyDown="{{ replyKey }}" placeholder="Reply — also texts the customer…" style="flex:1;border:1.5px solid #3a322d;background:#14100e;color:#fff;border-radius:9px;padding:11px 13px;font-size:14px"/>
+                <button onClick="{{ sendReply }}" style="background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:9px;padding:0 18px;cursor:pointer">Send</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noActiveThread }}" hint-placeholder-val="{{ true }}"><div style="flex:1;display:flex;align-items:center;justify-content:center;color:#6f6862;font-size:13.5px">Select a conversation</div></sc-if>
+          </div>
+        </div>
+      </sc-if>
+
       <!-- CALENDAR -->
       <sc-if value="{{ onCalendar }}" hint-placeholder-val="{{ false }}">
         <div style="animation:fadeIn .2s ease">
           <sc-if value="{{ hasCalendar }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button onClick="{{ openCalendar }}" style="background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:9px;padding:10px 16px;cursor:pointer;font-size:13.5px">↗ Open in Google Calendar</button></div>
             <div style="background:#1c1714;border:1px solid #2a2320;border-radius:14px;overflow:hidden">
               <iframe src="{{ calendarUrl }}" style="width:100%;height:620px;border:0;display:block;background:#fff"></iframe>
             </div>
@@ -190,45 +247,82 @@
 class Component extends DCLogic {
   state = {
     token:'', apiBase:'', tokenInput:'', apiInput:'', loginErr:'', busy:false, loggedIn:false, demoMode:false,
+    codeInput:'', needCode:false, enrolled:false,
+    twofaOpen:false, twofaBusy:false, twofaErr:'', twofaSecret:'', twofaOtpauth:'', enrollCode:'',
     tab:'jobs', jobs:[], customers:[], stock:[], calendarUrl:'', gpsRef:'',
+    threads:[], activeThread:'', threadMsgs:[], replyInput:'',
     pName:'', pSku:'', pQty:'', pPrice:''
   };
 
   componentDidMount(){
-    try{ const t=localStorage.getItem('cms_admin_token'); const a=localStorage.getItem('cms_admin_api')||''; if(t){ this.setState({token:t, apiBase:a, apiInput:a}, ()=>this.enter()); } }catch(e){}
+    try{ const sess=localStorage.getItem('cms_admin_sess'); const a=localStorage.getItem('cms_admin_api')||''; if(sess){ this.setState({token:sess, apiBase:a, apiInput:a}, ()=>this.enter()); } }catch(e){}
   }
 
   setToken = e => this.setState({tokenInput:e.target.value});
   setApi = e => this.setState({apiInput:e.target.value});
+  setCode = e => this.setState({codeInput:e.target.value.replace(/\D/g,'').slice(0,6)});
   onKey = e => { if(e.key==='Enter') this.login(); };
-  login = () => {
-    const t=this.state.tokenInput.trim();
-    if(!t){ this.setState({loginErr:'Enter your admin token.'}); return; }
-    const a=this.state.apiInput.trim().replace(/\/+$/,'');
-    this.setState({token:t, apiBase:a, busy:true, loginErr:''});
-    try{ localStorage.setItem('cms_admin_token',t); localStorage.setItem('cms_admin_api',a); }catch(e){}
-    setTimeout(()=>this.enter(), 50);
-  };
-  logout = () => { try{ localStorage.removeItem('cms_admin_token'); }catch(e){} this.setState({loggedIn:false, token:'', tokenInput:''}); };
+  apiBaseUrl(){ return (this.state.apiInput||'').trim().replace(/\/+$/,''); }
+  async raw(path, opts){ opts=opts||{}; const h=Object.assign({'content-type':'application/json'}, opts.headers||{}); return fetch(this.apiBaseUrl()+'/api'+path, {...opts, headers:h}); }
 
+  login = async () => {
+    const tok=this.state.tokenInput.trim();
+    if(!tok){ this.setState({loginErr:'Enter your admin token.'}); return; }
+    const a=this.apiBaseUrl();
+    try{ localStorage.setItem('cms_admin_api',a); }catch(e){}
+    this.setState({busy:true, loginErr:''});
+    // Demo mode when no live worker is reachable
+    if(!(a || this.sameOrigin())){ this.setState({loggedIn:true, demoMode:true, busy:false, ...this.demoData()}); return; }
+    try{
+      const r=await this.raw('/admin-login',{method:'POST',body:JSON.stringify({token:tok, code:this.state.codeInput})});
+      const d=await r.json().catch(()=>({}));
+      if(r.status===401 && /code/i.test(d.error||'')){ this.setState({busy:false, needCode:true, loginErr:this.state.codeInput?'Code incorrect — try the current 6 digits.':''}); return; }
+      if(!r.ok){ this.setState({busy:false, loginErr:d.error||'Login failed.'}); return; }
+      // success — d.token is a 2FA-verified admin session
+      try{ localStorage.setItem('cms_admin_sess', d.token); }catch(e){}
+      this.setState({ token:d.token, apiBase:a, enrolled:!!d.enrolled, needCode:false, codeInput:'', loggedIn:true, demoMode:false, busy:false });
+      this.loadAll();
+    }catch(e){ this.setState({loggedIn:true, demoMode:true, busy:false, ...this.demoData()}); }
+  };
+  logout = () => { try{ localStorage.removeItem('cms_admin_sess'); }catch(e){} this.setState({loggedIn:false, token:'', tokenInput:'', codeInput:'', needCode:false}); };
+  close2fa = () => this.setState({twofaOpen:false});
+  stop = (e) => e.stopPropagation();
+
+  // ---- 2FA enrollment ----
+  start2fa = async () => {
+    this.setState({twofaBusy:true, twofaErr:''});
+    try{ const r=await this.raw('/admin-2fa/new',{method:'POST',body:JSON.stringify({token:this.state.tokenInput.trim()})});
+      const d=await r.json(); if(!r.ok) throw new Error(d.error||'Failed');
+      this.setState({twofaSecret:d.secret, twofaOtpauth:d.otpauth, twofaOpen:true, twofaBusy:false});
+    }catch(e){ this.setState({twofaBusy:false, twofaErr:e.message}); }
+  };
+  setEnrollCode = e => this.setState({enrollCode:e.target.value.replace(/\D/g,'').slice(0,6)});
+  enable2fa = async () => {
+    this.setState({twofaBusy:true, twofaErr:''});
+    try{ const r=await this.raw('/admin-2fa/enable',{method:'POST',body:JSON.stringify({token:this.state.tokenInput.trim(), secret:this.state.twofaSecret, code:this.state.enrollCode})});
+      const d=await r.json(); if(!r.ok) throw new Error(d.error||'Failed');
+      this.setState({twofaOpen:false, twofaBusy:false, enrolled:true, twofaSecret:'', enrollCode:''});
+      alert('Two-factor authentication is now ON. Next login will require your authenticator code.');
+    }catch(e){ this.setState({twofaBusy:false, twofaErr:e.message}); }
+  };
+
+  // Same-origin API when served from the worker (blank Worker URL); preview/localhost => demo.
+  sameOrigin(){ try{ return /^https?:$/.test(location.protocol) && !/(^|\.)omelette|preview|localhost|127\.0\.0\.1/.test(location.hostname); }catch(e){ return false; } }
   async af(path, opts){
     opts=opts||{}; const h=Object.assign({}, opts.headers||{});
     if(opts.body && !h['content-type']) h['content-type']='application/json';
     h['authorization']='Bearer '+this.state.token;
-    return fetch(this.state.apiBase+'/api'+path, {...opts, headers:h});
+    return fetch((this.state.apiBase||'')+'/api'+path, {...opts, headers:h});
   }
-  hasServer(){ return !!this.state.apiBase || (typeof location!=='undefined' && /^https?:/.test(location.protocol) && location.hostname!=='localhost'); }
+  hasServer(){ return !!this.state.apiBase || this.sameOrigin(); }
 
   async enter(){
-    // Try the live worker; if unreachable/forbidden, fall back to demo data.
-    if(this.state.apiBase){
+    if(this.state.apiBase || this.sameOrigin()){
       try{
         const r=await this.af('/admin/jobs');
-        if(r.status===403){ this.setState({busy:false, loginErr:'Token rejected by the server.'}); return; }
         if(r.ok){ this.setState({loggedIn:true, demoMode:false, busy:false}); this.loadAll(); return; }
       }catch(e){}
     }
-    // demo mode
     this.setState({loggedIn:true, demoMode:true, busy:false, ...this.demoData()});
   }
   demoData(){
@@ -258,11 +352,22 @@ class Component extends DCLogic {
   }
   async loadAll(){
     if(this.state.demoMode) return;
-    try{ const [j,c,s,cal]=await Promise.all([this.af('/admin/jobs'),this.af('/admin/customers'),this.af('/admin/stock'),this.af('/admin/calendar')]);
-      const jd=await j.json().catch(()=>({})); const cd=await c.json().catch(()=>({})); const sd=await s.json().catch(()=>({})); const cald=await cal.json().catch(()=>({}));
-      this.setState({ jobs:jd.jobs||[], customers:cd.customers||[], stock:sd.stock||[], calendarUrl:(cald&&cald.embedUrl)||'' });
+    try{ const [j,c,s,cal,th]=await Promise.all([this.af('/admin/jobs'),this.af('/admin/customers'),this.af('/admin/stock'),this.af('/admin/calendar'),this.af('/admin/threads')]);
+      const jd=await j.json().catch(()=>({})); const cd=await c.json().catch(()=>({})); const sd=await s.json().catch(()=>({})); const cald=await cal.json().catch(()=>({})); const thd=await th.json().catch(()=>({}));
+      this.setState({ jobs:jd.jobs||[], customers:cd.customers||[], stock:sd.stock||[], calendarUrl:(cald&&cald.embedUrl)||'', threads:thd.threads||[] });
     }catch(e){}
   }
+  openThread(email){
+    this.setState({activeThread:email});
+    if(this.state.demoMode){ this.setState({threadMsgs:[{t:Date.now()-600000,from:'customer',text:'Hi, is my tyre in stock?'},{t:Date.now()-300000,from:'admin',text:'Yes — booked you in for the morning.'}]}); return; }
+    this.af('/admin/threads/'+encodeURIComponent(email)).then(r=>r.json()).then(d=>{ this.setState({threadMsgs:d.messages||[]}); this.loadAll(); }).catch(()=>{});
+  }
+  setReply = e => this.setState({replyInput:e.target.value});
+  sendReply = () => {
+    const text=(this.state.replyInput||'').trim(); const email=this.state.activeThread; if(!text||!email) return;
+    this.setState(s=>({threadMsgs:[...s.threadMsgs,{t:Date.now(),from:'admin',text}], replyInput:''}));
+    if(!this.state.demoMode) this.af('/admin/threads/'+encodeURIComponent(email),{method:'POST',body:JSON.stringify({text})}).then(r=>r.json()).then(d=>{ if(d.messages) this.setState({threadMsgs:d.messages}); }).catch(()=>{});
+  };
   refresh = () => { if(this.state.demoMode){ this.setState(this.demoData()); } else this.loadAll(); };
 
   go(tab){ this.setState({tab}); }
@@ -331,7 +436,8 @@ class Component extends DCLogic {
       qtyStyle:'font-weight:700;color:'+(p.qty<=2?'#f0a884':(p.qty<=5?'#f4a04a':'#4fe06a')),
       del:()=>this.delStock(p.id) }));
 
-    const tabDef=[['jobs','Jobs',activeJobs.length],['customers','Customers',s.customers.length],['stock','Parts & Stock',s.stock.length],['calendar','Calendar','']];
+    const unreadTotal = s.threads.reduce((n,t)=>n+(t.unread||0),0);
+    const tabDef=[['jobs','Jobs',activeJobs.length],['messages','Messages',unreadTotal||''],['customers','Customers',s.customers.length],['stock','Parts & Stock',s.stock.length],['calendar','Calendar','']];
     const tabs=tabDef.map(t=>({ label:t[1], count:t[2], go:()=>this.go(t[0]),
       style:'display:flex;align-items:center;gap:7px;border:0;cursor:pointer;background:transparent;color:'+(s.tab===t[0]?'#fff':'#8a817b')+';font-family:\'Barlow Condensed\';font-weight:700;font-size:16px;letter-spacing:.03em;padding:14px 16px;border-bottom:2px solid '+(s.tab===t[0]?'#e8791a':'transparent'),
       pillStyle: t[2]===''?'display:none':'display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 6px;border-radius:9px;font-size:11px;font-weight:800;background:'+(s.tab===t[0]?'#e8791a':'#2a2320')+';color:'+(s.tab===t[0]?'#14100e':'#9a918a') }));
@@ -347,9 +453,23 @@ class Component extends DCLogic {
     return {
       needsLogin:!s.loggedIn, loggedIn:s.loggedIn, demoMode:s.demoMode,
       tokenInput:s.tokenInput, apiInput:s.apiInput, setToken:this.setToken, setApi:this.setApi, onKey:this.onKey,
+      codeInput:s.codeInput, setCode:this.setCode, needCode:s.needCode,
+      start2fa:this.start2fa, twofaOpen:s.twofaOpen, close2fa:this.close2fa, stop:this.stop,
+      twofaSecret:s.twofaSecret, twofaErr:s.twofaErr, enrollCode:s.enrollCode, setEnrollCode:this.setEnrollCode, enable2fa:this.enable2fa,
       login:this.login, logout:this.logout, refresh:this.refresh, loginErr:s.loginErr, loginLabel:s.busy?'Signing in…':'Enter dashboard',
       tabs, kpis,
-      onJobs:s.tab==='jobs', onCustomers:s.tab==='customers', onStock:s.tab==='stock', onCalendar:s.tab==='calendar',
+      onJobs:s.tab==='jobs', onCustomers:s.tab==='customers', onStock:s.tab==='stock', onCalendar:s.tab==='calendar', onMessages:s.tab==='messages',
+      threadRows: s.threads.map(t=>({ email:t.email, name:t.name||t.email, phone:t.phone||'', last:t.last||'', unread:t.unread||0,
+        open:()=>this.openThread(t.email),
+        rowStyle:'display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #201b18;cursor:pointer;background:'+(s.activeThread===t.email?'#241d19':'transparent'),
+        dotStyle:'width:9px;height:9px;border-radius:50%;flex:none;background:'+((t.unread||0)>0?'#e8791a':'transparent') })),
+      noThreads: s.threads.length===0, hasActiveThread:!!s.activeThread, noActiveThread:!s.activeThread,
+      threadMsgs: s.threadMsgs.map(m=>{ const admin=m.from==='admin'; return { text:m.text, who:admin?'You':'Customer', time:new Date(m.t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
+        rowStyle:'display:flex;flex-direction:column;'+(admin?'align-items:flex-end':'align-items:flex-start'),
+        bubbleStyle:'max-width:78%;padding:9px 12px;border-radius:12px;font-size:13.5px;line-height:1.4;'+(admin?'background:#e8791a;color:#14100e':'background:#2a2320;color:#e9e4df') }; }),
+      replyInput:s.replyInput, setReply:this.setReply, sendReply:this.sendReply,
+      replyKey:(e)=>{ if(e.key==='Enter') this.sendReply(); },
+      openCalendar:()=>window.open(s.calendarUrl||'https://calendar.google.com','_blank'),
       jobRows, noJobs:s.jobs.length===0,
       custRows, noCust:s.customers.length===0,
       stockRows, noStock:s.stock.length===0,
