@@ -29,6 +29,7 @@
 <meta name="twitter:image" content="https://cousinsmechanicalservices.co.uk/images/tyre-van.jpg">
 <link rel="icon" type="image/png" href="images/logo.png">
 <link rel="apple-touch-icon" href="images/logo.png">
+<script src="vehicle-data.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
@@ -244,6 +245,39 @@
       <!-- error -->
       <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
         <div style="margin-top:18px;background:#fdeee7;border:1px solid #f3c6ae;color:#a5401a;border-radius:11px;padding:14px 16px;text-align:center;font-weight:600">{{ regError }}</div>
+      </sc-if>
+
+      <!-- confirm: is this your car? -->
+      <sc-if value="{{ isConfirm }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:22px;animation:riseUp .4s ease both">
+          <div style="text-align:center;color:#5c534d;font-size:14px;margin-bottom:12px">We found this vehicle for <strong style="color:#1c1817">{{ confirmReg }}</strong> — is this your car?</div>
+          <div style="max-width:460px;margin:0 auto;background:#14100e;border-radius:14px;padding:20px 22px;color:#fff;display:flex;align-items:center;gap:16px">
+            <div style="width:52px;height:52px;flex:none;border-radius:10px;background:rgba(232,121,26,.16);display:flex;align-items:center;justify-content:center">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f4a04a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6.5 17l-1.2-5.2A2 2 0 0 1 7.2 9.4l.6-2.6A2 2 0 0 1 9.8 5.3h4.4a2 2 0 0 1 2 1.5l.6 2.6a2 2 0 0 1 1.9 2.4L17.5 17"/><circle cx="8" cy="17.5" r="1.6"/><circle cx="16" cy="17.5" r="1.6"/></svg>
+            </div>
+            <div style="line-height:1.2">
+              <div style="font-family:'Barlow Condensed';font-weight:800;font-size:26px">{{ confirmVehicle.title }}</div>
+              <div style="color:#b3aaa3;font-size:14px;font-weight:600">{{ confirmVehicle.line2 }}</div>
+            </div>
+          </div>
+          <div style="max-width:460px;margin:14px auto 0;display:flex;gap:10px">
+            <button onClick="{{ confirmYes }}" style="flex:1;background:#e8791a;color:#14100e;font-weight:700;border:0;border-radius:10px;padding:14px;cursor:pointer;font-size:15.5px" style-hover="background:#f78c30">Yes, that's my car →</button>
+            <button onClick="{{ notMyCar }}" style="background:#f0ebe5;color:#1c1817;font-weight:700;border:0;border-radius:10px;padding:14px 18px;cursor:pointer;font-size:14.5px">Not my car</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- not my car -->
+      <sc-if value="{{ notMyCarOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:20px;max-width:460px;margin-left:auto;margin-right:auto;background:#fff6ec;border:1px solid #f2d9bd;border-radius:12px;padding:18px 20px;text-align:center;animation:fadeIn .3s ease">
+          <div style="font-family:'Barlow Condensed';font-weight:800;font-size:20px;color:#1c1817;margin-bottom:6px">No problem — let's get it right</div>
+          <div style="color:#5c534d;font-size:14px;line-height:1.5;margin-bottom:14px">Give us a quick call and we'll match your exact vehicle and tyres by hand.</div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <a href="tel:07925340977" style="display:inline-flex;align-items:center;gap:8px;background:#e8791a;color:#14100e;font-weight:700;border-radius:10px;padding:12px 20px;font-size:15px">📞 Call 07925 340977</a>
+            <a href="https://wa.me/447925340977?text=Hi%20Cousins%2C%20I%20need%20help%20matching%20my%20vehicle%20for%20tyres." target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#25d366;color:#0a2c17;font-weight:700;border-radius:10px;padding:12px 20px;font-size:15px">WhatsApp us</a>
+          </div>
+          <button onClick="{{ tryAgain }}" style="background:none;border:0;color:#c25e0c;font-weight:700;cursor:pointer;text-decoration:underline;font-size:13px;margin-top:12px">Try another registration</button>
+        </div>
       </sc-if>
 
       <!-- result -->
@@ -861,6 +895,7 @@ class Component extends DCLogic {
     trackRef: '', eta: 0, distance: 0, feed: [], lightbox: '', now: Date.now(), estimate:true,
     liveTrack:false, custPos:null, mechPos:null, geoErr:'', driverMode:false, driverRef:'', driverOn:false, driverErr:'', driverAcc:0,
     isSample: true, cfgOpen: false, cfgEndpoint: '', cfgKey: '', cfgProvider: 'vdim',
+    confirmVehicle: null, confirmReg: '', notMyCarOpen: false,
     pk: { year:'', make:'', model:'', trim:'' },
     opt: { years:[], makes:[], models:[], trims:[] }, pkErr: ''
   };
@@ -871,6 +906,7 @@ class Component extends DCLogic {
     this.loadSession();
     try{ const m=(location.hash||'').match(/reset=([\w-]+)/); if(m){ this.setState({resetToken:m[1], portalOpen:true}); } }catch(e){}
     this.loadOrders();
+    setTimeout(()=>this.loadYears(), 60);
     this._tick = setInterval(()=>this.setState({now:Date.now()}), 1000);
     setTimeout(()=>this.showMobCta(), 60);
   }
@@ -934,7 +970,7 @@ class Component extends DCLogic {
   }
   buildSize(t){
     if(!t) return '';
-    const w=t.sectionWidthMm||t.sectionWidth, a=t.aspectRatio, r=t.rimDiameterInches||t.rimDiameter;
+    const w=t.SectionWidthMm||t.sectionWidthMm||t.sectionWidth, a=t.AspectRatio||t.aspectRatio, r=t.RimDiameterInches||t.rimDiameterInches||t.rimDiameter;
     return (w&&a&&r) ? (w+'/'+a+' R'+r) : '';
   }
   extractSize(d){
@@ -951,22 +987,25 @@ class Component extends DCLogic {
     return '';
   }
   loadYears = async () => {
+    // Always seed a sensible year range so the picker is usable immediately
+    const nowY=new Date().getFullYear(); const range=[]; for(let y=nowY+1;y>=1995;y--) range.push(String(y));
+    this.setState(s=>({opt:{...s.opt,years:range}, pkErr:''}));
     if(!this.hasProxy()) return;
-    this.setState({pkErr:''});
-    try{ const d=await this.tapi('/search_allyear'); const years=this.toList(d).sort((a,b)=>String(b).localeCompare(String(a),undefined,{numeric:true})); this.setState(s=>({opt:{...s.opt,years}})); }
-    catch(e){ this.setState({pkErr:'Could not reach the live tyre service — check your proxy URL is correct and deployed.'}); }
+    try{ const d=await this.tapi('/search_allyear'); const years=this.toList(d).sort((a,b)=>String(b).localeCompare(String(a),undefined,{numeric:true})); if(years.length) this.setState(s=>({opt:{...s.opt,years}})); }catch(e){}
   };
+  carMakes(){ return (typeof window!=='undefined' && window.CAR_MAKES) ? window.CAR_MAKES : []; }
+  carModels(make){ return (typeof window!=='undefined' && window.CAR_DATA && window.CAR_DATA[make]) ? window.CAR_DATA[make] : []; }
   pickYear = async (e) => {
     const year=e.target.value;
-    this.setState(s=>({pk:{year,make:'',model:'',trim:''}, opt:{...s.opt,makes:[],models:[],trims:[]}, pkErr:''}));
-    if(!year) return;
-    try{ const d=await this.tapi('/by_vehicle/make?year='+encodeURIComponent(year)); this.setState(s=>({opt:{...s.opt,makes:this.toList(d)}})); }catch(e){ this.pkFail(); }
+    this.setState(s=>({pk:{year,make:'',model:'',trim:''}, opt:{...s.opt,makes:this.carMakes(),models:[],trims:[]}, pkErr:''}));
+    if(!year || !this.hasProxy()) return;
+    try{ const d=await this.tapi('/by_vehicle/make?year='+encodeURIComponent(year)); const makes=this.toList(d); if(makes.length) this.setState(s=>({opt:{...s.opt,makes}})); }catch(e){}
   };
   pickMake = async (e) => {
     const make=e.target.value; const {year}=this.state.pk;
-    this.setState(s=>({pk:{...s.pk,make,model:'',trim:''}, opt:{...s.opt,models:[],trims:[]}, pkErr:''}));
-    if(!make) return;
-    try{ const d=await this.tapi('/by_vehicle/model?year='+encodeURIComponent(year)+'&make='+encodeURIComponent(make)); this.setState(s=>({opt:{...s.opt,models:this.toList(d)}})); }catch(e){ this.pkFail(); }
+    this.setState(s=>({pk:{...s.pk,make,model:'',trim:''}, opt:{...s.opt,models:this.carModels(make),trims:[]}, pkErr:''}));
+    if(!make || !this.hasProxy()) return;
+    try{ const d=await this.tapi('/by_vehicle/model?year='+encodeURIComponent(year)+'&make='+encodeURIComponent(make)); const models=this.toList(d); if(models.length) this.setState(s=>({opt:{...s.opt,models}})); }catch(e){}
   };
   pickModel = async (e) => {
     const model=e.target.value; const {year,make}=this.state.pk;
@@ -988,9 +1027,9 @@ class Component extends DCLogic {
       const dims=d.dimensions||d.data||d;
       const size=this.extractSize(dims);
       const v={ reg:'', make, model, year, title:(make+' '+model).trim(), line2:[trim,year].filter(Boolean).join(' · '), tyre:size };
-      this.setState({regStatus:'result', regTab:'tyres', vehicle:v, isSample:false});
+      this.setState({regStatus:'result', regTab:'tyres', vehicle:v});
       this.buildOptions(v,'tyres');
-    }catch(e){ this.setState({regStatus:'error', regError:'Could not load live tyre data for that vehicle.'}); }
+    }catch(e){ this.setState({regStatus:'error', regError:'We couldn\u2019t load tyre details for that vehicle just now \u2014 please try again, or call us on 07925 340977.'}); }
   }
   loadOrders(){ try{ const o=JSON.parse(localStorage.getItem('cms_orders')||'[]'); this.setState({orders:o}); const act=o.find(x=>x.status!=='cancelled'&&x.status!=='complete'); if(act){ this.startTracking(act.ref); } }catch(e){} }
   saveOrders(o){ try{ localStorage.setItem('cms_orders', JSON.stringify(o)); }catch(e){} this.setState({orders:o}); }
@@ -1005,15 +1044,66 @@ class Component extends DCLogic {
   lookupReg = async () => {
     const reg = (this.state.regInput||'').toUpperCase().replace(/\s+/g,'').trim();
     if(reg.length < 2){ this.setState({regStatus:'error', regError:'Please enter a valid number plate.'}); return; }
-    this.setState({regStatus:'loading', regError:''});
+    this.setState({regStatus:'loading', regError:'', notMyCarOpen:false});
     try {
-      const v = await this.fetchVehicle(reg);
-      this.setState({regStatus:'result', vehicle:v});
-      this.buildOptions(v, this.state.regTab);
+      const cv = await this.confirmLookup(reg);           // step 1: confirm make & model
+      this.setState({regStatus:'confirm', confirmReg:reg, confirmVehicle:cv});
     } catch(err){
       this.setState({regStatus:'error', regError:'We couldn\u2019t find that registration. Please double-check it, or call us on 07925 340977 and we\u2019ll sort it.'});
     }
   };
+  confirmYes = async () => {                              // step 2: pull tyre info
+    const reg = this.state.confirmReg;
+    this.setState({regStatus:'loading', regError:''});
+    try {
+      const t = await this.fetchVehicle(reg);             // TyreDetails -> size
+      const v = { ...this.state.confirmVehicle, reg, tyre: t.tyre || this.state.confirmVehicle.tyre || '' };
+      this.setState({regStatus:'result', regTab:'tyres', vehicle:v});
+      this.buildOptions(v, 'tyres');
+    } catch(err){
+      this.setState({regStatus:'error', regError:'We couldn\u2019t load tyre details for that vehicle just now \u2014 please try again, or call us on 07925 340977.'});
+    }
+  };
+  notMyCar = () => this.setState({regStatus:'idle', notMyCarOpen:true});
+  tryAgain = () => this.setState({regStatus:'idle', notMyCarOpen:false, regInput:'', vehicle:null});
+
+  // Step 1 — confirm the vehicle via VehicleDetails; fall back to TyreDetails' model name.
+  async confirmLookup(reg){
+    if(this.hasProxy()){
+      try{
+        const r = await fetch(this.tireBase()+'/api/ukvd?package=VehicleDetails&vrm='+encodeURIComponent(reg));
+        if(r.ok){ const d = await r.json(); const v = this.normaliseVD(reg, d); if(v && (v.make||v.model)){ return v; } }
+      }catch(e){}
+      // fallback: TyreDetails carries a model name even without VehicleDetails enabled
+      try{
+        const r2 = await fetch(this.tireBase()+'/api/ukvd?vrm='+encodeURIComponent(reg));
+        if(r2.ok){ const d2 = await r2.json(); const v2 = this.normalise(reg, d2, 'ukvd'); if(v2 && (v2.model||v2.tyre)){ v2.make = v2.make==='Vehicle' ? '' : v2.make; return v2; } }
+      }catch(e){}
+    }
+    throw new Error('noconfirm');
+  }
+  // Tolerant VehicleDetails parse (PascalCase VDG shape) + recursive key search fallback.
+  normaliseVD(reg, d){
+    const res = d.Results || d.results || d;
+    const vd = res.VehicleDetails || res.vehicleDetails || res;
+    const vi = vd.VehicleIdentification || vd.vehicleIdentification || vd;
+    const pick = (o,keys)=>{ for(const k of keys){ if(o && o[k]!=null && o[k]!=='' ) return o[k]; } return ''; };
+    let make = pick(vi,['DvlaMake','Make','Marque','make']) || this.deepFind(res,/make|marque/i);
+    let model = pick(vi,['DvlaModel','Model','Range','model']) || this.deepFind(res,/^model$|modelname|range/i);
+    if(typeof window!=='undefined' && window.canonMake && make) make = window.canonMake(make);
+    const year = pick(vi,['YearOfManufacture','ManufacturedYear','year']) || this.deepFind(res,/year/i);
+    const colour = pick(vi,['DvlaColour','Colour','Color']) || this.deepFind(res,/colou?r/i);
+    const fuel = pick(vi,['DvlaFuelType','FuelType','Fuel']) || this.deepFind(res,/fuel/i);
+    return this.pack(reg, String(make||'').trim()||'Vehicle', String(model||'').trim(), year||'', colour||'', fuel||'', '', '');
+  }
+  deepFind(obj, rx, depth){
+    depth = depth||0; if(!obj || typeof obj!=='object' || depth>4) return '';
+    for(const k in obj){ const val=obj[k];
+      if((typeof val==='string'||typeof val==='number') && rx.test(k) && String(val).trim()!=='') return val;
+    }
+    for(const k in obj){ if(obj[k] && typeof obj[k]==='object'){ const r=this.deepFind(obj[k],rx,depth+1); if(r) return r; } }
+    return '';
+  }
 
   // LIVE lookup. window.CMS_CONFIG.vehicleEndpoint = your proxy/API URL. The reg is appended
   // (or use {REG}/{KEY} placeholders). provider tells us how to read the response:
@@ -1038,17 +1128,18 @@ class Component extends DCLogic {
   }
   normalise(reg, d, provider){
     if(provider==='ukvd'){
-      // Vehicle Data Global r2: { results: { tyreDetails: { tyreDetailsList:[ { vehicle, front:{tyre:{sizeDescription}}, rear } ] } } }
-      const res = d.results || d.Results || d;
-      const td = res.tyreDetails || res.TyreDetails || {};
-      const list = td.tyreDetailsList || td.TyreDetailsList || [];
-      const item = list.find(x=>x && x.isStandardFitmentForVehicle) || list[0] || {};
-      const veh = item.vehicle || {};
-      const front = item.front || {};
-      const size = (front.tyre && (front.tyre.sizeDescription || this.buildSize(front.tyre))) || this.extractSize(td) || '';
-      const model = veh.modelName || '';
-      const year = (veh.year && (veh.year.uk || veh.year.euro)) || '';
-      // r2 tyre package carries model/year but not make/colour/fuel — keep them blank rather than guess
+      // Vehicle Data Global r2 (keys are PascalCase): Results.TyreDetails.TyreDetailsList[]
+      const res = d.Results || d.results || d;
+      const td = res.TyreDetails || res.tyreDetails || {};
+      const list = td.TyreDetailsList || td.tyreDetailsList || [];
+      const item = list.find(x=>x && (x.IsStandardFitmentForVehicle||x.isStandardFitmentForVehicle)) || list[0] || {};
+      const veh = item.Vehicle || item.vehicle || {};
+      const front = item.Front || item.front || {};
+      const ftyre = front.Tyre || front.tyre || {};
+      const size = ftyre.SizeDescription || ftyre.sizeDescription || this.buildSize(ftyre) || '';
+      const model = veh.ModelName || veh.modelName || '';
+      const yr = veh.Year || veh.year || {};
+      const year = yr.Uk || yr.uk || yr.Euro || yr.euro || '';
       return this.pack(reg, 'Vehicle', String(model).trim(), year, '', '', size, '');
     }
     // custom / already-normalised
@@ -1564,6 +1655,8 @@ class Component extends DCLogic {
       selectTyres:this.selectTyres, selectParts:this.selectParts,
       tyreTabStyle: s.regTab==='tyres'?active:idle, partsTabStyle: s.regTab==='parts'?active:idle,
       isLoading: s.regStatus==='loading', isError: s.regStatus==='error', hasResult: s.regStatus==='result',
+      isConfirm: s.regStatus==='confirm', confirmVehicle: s.confirmVehicle || {title:'',line2:''}, confirmReg: s.confirmReg,
+      notMyCarOpen: s.notMyCarOpen, confirmYes:this.confirmYes, notMyCar:this.notMyCar, tryAgain:this.tryAgain,
       vehicle: s.vehicle || {title:'',line2:'',tyre:'',make:''},
       showTyres: s.regStatus==='result' && s.regTab==='tyres',
       showParts: s.regStatus==='result' && s.regTab==='parts',

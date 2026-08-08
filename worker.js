@@ -670,9 +670,9 @@ async function api(request, env, url, ctx) {
     const vrm = (url.searchParams.get("vrm") || "").toUpperCase().replace(/\s+/g, "");
     if (!vrm) return bad("Missing vrm");
     const pkg = url.searchParams.get("package") || UKVD_PACKAGE;
-    // Vehicle Data Global (r2) — apiKey + packageName + key_VRM as query params.
+    // Vehicle Data Global (r2) — packagename + apikey + vrm query params.
     const base = (env.UKVD_BASE || "https://uk.api.vehicledataglobal.com/r2/lookup").replace(/\/+$/, "");
-    const target = `${base}?apiKey=${encodeURIComponent(env.UKVD_API_KEY)}&packageName=${encodeURIComponent(pkg)}&key_VRM=${encodeURIComponent(vrm)}`;
+    const target = `${base}?packagename=${encodeURIComponent(pkg)}&apikey=${encodeURIComponent(env.UKVD_API_KEY)}&vrm=${encodeURIComponent(vrm)}`;
     const r = await fetch(target, { headers: { accept: "application/json" } }).catch(() => null);
     if (!r) return bad("UK Vehicle Data unreachable", 502);
     return new Response(await r.text(), { status: r.status, headers: { ...CORS, "content-type": "application/json" } });
